@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css"/>
+    <script src="lib.js"></script>
+    <script src="gameClass.js"></script>
+    <script>
+      var game = null;
+      var meta_game = null;
+      var selected_element = [null, null]
+      let currentIndex = 0;
+
+      function onload() {
+        var gameID = parseIdFromUrl();            
+        getJSON('http://127.0.0.1:8000/api/games?id='+gameID,
+          function(err, data) {
+            if (err !== null) {
+              alert('Something went wrong: ' + err);
+            } else {
+              game = data;
+              init();
+              load_transition();
+            }
+          }
+        ); 
+      }
+
+      
+      function selectSubGame(element, id) {
+        element.classList.add("game_card_selected");
+        if (selected_element[0] != element && selected_element[0] != null){
+          selected_element[0].classList.remove("game_card_selected");
+        }
+
+        document.getElementById("sb_gamename").innerHTML=`<b>${getSubgameByID(game,id).name}:</b>`;
+        document.getElementById("sb_playtime").innerHTML=`Playtime: ${getSubgameByID(game,id).playtime.toFixed(2)}h`;
+        document.getElementById("sb_lastplayed").innerHTML=`Last played: ${formatDate(getSubgameByID(game,id).last_launch, 'de-DE')}`;
+        document.getElementById("sb_play").onclick="launch("+id+")";
+        document.getElementById("sb_settings").onclick="settings("+id+")";
+
+        selected_element[0] = element;
+        selected_element[1] = id;
+      }
+
+      function init() {
+        document.body.style.backgroundImage="url(/api/media?game="+game.id+"&location=background)";
+        var root_element = document.getElementsByClassName("blur_layer")[0];
+        var images = "";
+        if (game.sub_games.length > 1){ 
+          for (sub_game of game.sub_games){
+            images += `<img src="/api/media?game=${sub_game.id}&location=card" class="game_card" id="subgame${sub_game.id}" onclick="selectSubGame(this, ${sub_game.id})" data-id="${sub_game.id}"></img>`;
+          }
+        } else {
+            images = `<img src="/api/media?game=${game.id}&location=card" id="subgame${game.sub_games[0].id}" data-id="${game.sub_games[0].id}" class="game_card game_card_selected" >`
+        }
+
+        root_element.innerHTML += `
+          <div class="content">
+          ${images}
+          </div>
+          <div class="statbar subgame_stat">
+              <a class="sb_widget sb_center sb_name" id="sb_gamename"><b>${game.sub_games[0].name}:</b></a>
+              <a class="sb_widget sb_center" id="sb_playtime">Playtime: ${game.sub_games[0].playtime.toFixed(2)}h</a>
+              <a class="sb_widget sb_center" id="sb_lastplayed">Last played: ${formatDate(game.sub_games[0].last_launch, 'de-DE')}</a>
+              <a class="sb_widget sb_center sb_play" id="sb_play" onclick="launch(${game.sub_games[0].id})">Play</a>
+              <a class="sb_widget sb_center sb_settings" id="sb_settings" onclick="settings(${game.sub_games[0].id})">
+                <svg fill="#ffffff" height="70%" width="auto" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 512 512">
+                  <g>
+                    <g>
+                      <g>
+                        <g>
+                          <path d="m301.9,501h-91.7c-11.3,0-20.4-9.1-20.4-20.4v-34.7c-7.2-2.5-14.2-5.4-21.1-8.8l-24.6,24.6c-8,8-20.9,8-28.9,0l-64.8-64.8c-8-8-8-20.9 0-28.9l24.6-24.6c-3.3-6.9-6.3-13.9-8.8-21.1h-34.8c-11.3,0-20.4-9.1-20.4-20.4v-91.7c0-11.3 9.1-20.4 20.4-20.4h34.7c2.5-7.2 5.4-14.2 8.8-21.1l-24.5-24.7c-8-8-8-20.9 0-28.9l64.8-64.8c8-8 20.9-8 28.9,0l24.6,24.6c6.9-3.3 13.9-6.3 21.1-8.8v-34.7c0-11.3 9.1-20.4 20.4-20.4h91.7c11.3,0 20.4,9.1 20.4,20.4v34.7c7.2,2.5 14.2,5.4 21.1,8.8l24.6-24.5c8-8 20.9-8 28.9,0l64.8,64.8c3.8,3.8 6,9 6,14.4 0,5.4-2.2,10.6-6,14.4l-24.6,24.6c3.3,6.9 6.3,13.9 8.8,21.1h34.7c11.3,0 20.4,9.1 20.4,20.4v91.7c0,11.3-9.1,20.4-20.4,20.4h-34.7c-2.5,7.2-5.4,14.2-8.8,21.1l24.6,24.6c3.8,3.8 6,9 6,14.4 0,5.4-2.2,10.6-6,14.4l-64.8,64.8c-8,8-20.9,8-28.9,0l-24.6-24.6c-6.9,3.3-13.9,6.3-21.1,8.8v34.7c5.68434e-14,11.5-9.2,20.6-20.4,20.6zm-71.3-40.8h50.8v-29.4c0-9.3 6.3-17.4 15.3-19.8 14-3.7 27.5-9.3 40.1-16.7 8-4.7 18.2-3.4 24.7,3.2l20.8,20.8 35.9-35.9-20.8-20.8c-6.6-6.6-7.9-16.7-3.2-24.8 7.4-12.6 13-26.1 16.7-40.1 2.3-9 10.5-15.2 19.7-15.2h29.4v-50.8h-29.4c-9.3,0-17.4-6.3-19.7-15.2-3.7-14-9.3-27.5-16.7-40.1-4.7-8-3.4-18.2 3.2-24.7l20.8-20.8-35.9-35.9-20.8,20.8c-6.6,6.6-16.7,7.9-24.7,3.2-12.6-7.4-26.1-13-40.1-16.7-9-2.4-15.3-10.5-15.3-19.8v-29.7h-50.8v29.4c0,9.3-6.3,17.4-15.3,19.8-14,3.7-27.5,9.3-40.1,16.7-8,4.7-18.2,3.4-24.7-3.2l-20.8-20.8-35.9,35.9 20.8,20.8c6.6,6.6 7.9,16.7 3.2,24.7-7.4,12.6-13,26.1-16.7,40.1-2.4,9-10.5,15.3-19.8,15.3h-29.4v50.8h29.4c9.3,0 17.4,6.3 19.8,15.3 3.7,14 9.3,27.5 16.7,40.1 4.7,8 3.4,18.2-3.2,24.7l-20.8,20.8 35.9,35.9 20.8-20.8c6.6-6.6 16.8-7.9 24.7-3.2 12.6,7.4 26.1,13 40.1,16.7 9,2.4 15.3,10.5 15.3,19.8v29.6z"/>
+                        </g>
+                        <g>
+                          <path d="m256,376.2c-66.3,0-120.2-53.9-120.2-120.2s53.9-120.2 120.2-120.2 120.3,53.9 120.3,120.2-54,120.2-120.3,120.2zm0-199.6c-43.8,0-79.4,35.6-79.4,79.4s35.6,79.4 79.4,79.4c43.8,0 79.4-35.6 79.4-79.4s-35.6-79.4-79.4-79.4z"/>
+                        </g>
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              </a> 
+            </div>
+          `;
+        selectSubGame(document.getElementById("subgame"+game.sub_games[0].id), game.sub_games[0].id);
+          document.addEventListener("keydown", (e) => {
+          const container = document.getElementsByClassName("content")[0];
+          const cards = container.querySelectorAll(".game_card");
+  
+          if (cards.length === 0) return;
+  
+          if (e.key === "ArrowRight") {
+            currentIndex = (currentIndex + 1) % cards.length;
+          }
+          else if (e.key === "ArrowLeft") {
+            currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+          }
+          else if (e.key === "Enter") {
+            launch(cards[currentIndex].dataset.id);
+          }
+          else if (e.key === "Escape") {
+            e.preventDefault();
+            window.location = "/static/index.html";
+          }
+          else if (e.key === "S") {
+            e.preventDefault();
+            settings(cards[currentIndex].dataset.id);
+          }
+          else {
+            console.log(e.key);
+            return;
+          }
+          selectSubGame(cards[currentIndex],cards[currentIndex].dataset.id);
+        });
+
+      }
+
+      function launch(id){
+        document.getElementById("sb_play").classList.add("sb_play_active");
+        document.getElementById("sb_play").innerHTML="[Launching...]"
+        setTimeout(() => getJSON('http://127.0.0.1:8000/api/launch?id='+id,
+          function(err, data) {
+            if (err !== null) {
+              alert('Something went wrong: ' + err);
+            } else {
+              if (data.status == "successful"){
+               window.location = "game_loader.html#id="+game.id;
+              }else {
+                alert("Error: "+data.status)
+                window.location.reload();
+              }
+            }
+          }
+        ), 500); 
+      }
+      function settings(id){
+
+      }
+    </script>
+  </head>
+  <body onload="onload()" class="unloaded">
+    <div id="fade-overlay"></div> 
+    <div class="blur_layer space_between">
+      <div class="header_bar">
+       <a href="index.html" class="header_button header_button_active">
+         <!-- Left Arrow for back button --> 
+        <svg width="auto" height="100%" viewBox="-19.04 0 75.803 75.803" xmlns="http://www.w3.org/2000/svg">
+          <g id="Group_64" data-name="Group 64" transform="translate(-624.082 -383.588)">
+            <path id="Path_56" data-name="Path 56" d="M660.313,383.588a1.5,1.5,0,0,1,1.06,2.561l-33.556,33.56a2.528,2.528,0,0,0,0,3.564l33.556,33.558a1.5,1.5,0,0,1-2.121,2.121L625.7,425.394a5.527,5.527,0,0,1,0-7.807l33.556-33.559A1.5,1.5,0,0,1,660.313,383.588Z" fill="#000000"/>
+           </g>
+         </svg> 
+        </a> 
+        <a class="large_spacer"></a>
+        <a class="large_spacer"></a>
+        <a class="large_spacer"></a>
+      </div>
+      <!-- Content goes here --> 
+    </div>
+  </body>
+</html>

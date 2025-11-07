@@ -1,0 +1,70 @@
+<canvas id="myChart"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="lib.js"></script>
+<script>
+
+async function getDatasets(gameIds, data) {
+  const datasets = await Promise.all(gameIds.map(async (id, idx) => {
+    const response = await fetch(`http://localhost:8000/api/get_info?id=${id}`);
+    const name_data = await response.json();
+    const name = name_data.name;
+
+    return {
+      label: name,
+      data: data.map(day => {
+        const game = day.games.find(g => g.id === id);
+        return game ? game.playtime / 3600 : 0;
+      }),
+      backgroundColor: `hsl(${idx * 60}, 70%, 60%)`
+    };
+  }));
+
+  return datasets;
+}
+
+getJSON("http://localhost:8000/api/history?scope=week", data_loaded);
+let days_list = [];
+let game_ids = [];
+let game_playtime = [];
+let datasets = [];
+let labels = [];
+let games = [];
+
+async function data_loaded(error, data) {
+labels = data.map(d => d.date);
+
+// 2. Find unique game IDs
+const gameIds = [...new Set(data.flatMap(d => d.games.map(g => g.id)))];
+
+// 3. Build datasets for each game
+getDatasets(gameIds, data).then(datasets => {
+const ctx = document.getElementById('myChart');
+
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels, // Days of week
+    datasets: datasets
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' }
+    },
+    scales: {
+      x: {
+        stacked: true
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+})
+
+
+}
+</script>

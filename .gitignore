@@ -1,0 +1,12 @@
+/target
+
+/proton
+
+/data
+
+/static/assets
+
+/media
+
+.session
+.webdev

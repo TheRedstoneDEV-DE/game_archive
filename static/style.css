@@ -1,0 +1,369 @@
+body {
+  transition: background-position 0.5s;
+  background-color: #001a33;
+  padding: 0;
+  margin: 0;
+  font-family: hack;
+  background-repeat: no-repeat;
+  background-size: 135%;
+  background-position: center;
+  color: white;
+}
+
+#fade-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;  /* or white, or match your bg */
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s;
+  pointer-events: none; /* let clicks pass through after fade-out */
+}
+
+#fade-overlay.hidden {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+
+/* -- Buttons -- */
+
+.button {
+  transition: 0.2s linear;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+  color: white;
+  border-radius: 5px;
+  background-color: #4f4f4f;
+  margin-top: 5px;
+  background-color: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid #8f8f8f;
+}
+
+.button:hover {
+  transition: 0.2s linear;
+  background-color: rgba(255,255,255,0.2);
+}
+
+.green {
+  background-color: rgba(0, 250, 150, 0.6);  
+}
+
+.green:hover {
+  background-color: rgba(0, 250, 150, 0.8); 
+}
+
+.red {
+  background-color: #df0f0faf;
+}
+.red:hover {
+  background-color: #df0f0fff;
+}
+
+
+
+/* -- Scrollable -- */
+.scrollable {
+  height: 50vh;
+  overflow-y: auto;
+}
+
+/* -- Loaders -- */
+.loader {
+  margin: 1rem;
+  width: 45px;
+  aspect-ratio: 1;
+  --c: no-repeat linear-gradient(#fff 0 0);
+  background: 
+    var(--c) 0%   50%,
+    var(--c) 50%  50%,
+    var(--c) 100% 50%;
+  background-size: 20% 100%;
+  animation: l1 1s infinite linear;
+}
+@keyframes l1 {
+  0%  {background-size: 20% 100%,20% 100%,20% 100%}
+  33% {background-size: 20% 10% ,20% 100%,20% 100%}
+  50% {background-size: 20% 100%,20% 10% ,20% 100%}
+  66% {background-size: 20% 100%,20% 100%,20% 10% }
+  100%{background-size: 20% 100%,20% 100%,20% 100%}
+}
+
+/* -- KILLSWITCH COMPONENT -- */
+.killswitch {
+  transition: background-color 0.5s;
+  margin: 1em;
+  background-color: rgba(120,0,0,0.8);
+  color: white;
+  border-radius: 10px;
+  padding: 0.5em;
+  min-width: 150px;
+  text-align: center;
+}
+.killswitch::after {
+  content: "Kill";
+}
+.killswitch:hover {
+  transition: background-color 0.5s;
+  background-color: rgba(200,0,0,1.0);
+}
+.killswitch:hover::after{
+  content: "";
+  font-weight: bold;
+}
+.killswitch .icon{
+  opacity: 0;
+  display: none;
+}
+.killswitch:hover .icon{
+  display: inline-block;
+  opacity: 1;
+}
+
+.space_between {
+  display: flex;
+  /*justify-content:space-between;*/
+  flex-direction: column;
+}
+
+.content {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+
+.blur_layer {
+  padding:0;
+  min-height: 100vh;
+  background-color: rgba(0,0,5,0.6);
+  backdrop-filter: blur(10px);
+}
+
+.blur {
+  backdrop-filter: blur(20px);
+}
+
+.center_popup {
+  width: 25%;
+  background-color: rgba(255,255,255,0.1); 
+  backdrop-filter: blur(10px); 
+  border-radius: 5px;
+  text-align: center;
+}
+
+input, select {
+  width: 98%;
+  padding: 12px;
+  margin: 5px 0;
+  box-sizing: border-box;
+  background-color: rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px);
+  color: white;
+  border-radius: 5px;
+  border: none;
+}
+
+.subgame {
+  background-color: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 5px;
+  padding: 1%;
+  border: 1px solid #8f8f8f;
+  margin-bottom: 0.5em;
+}
+
+.subgame span, input, select {
+  margin: 0.5em;
+}
+
+/* -- HERE COME THE BARS hehe -- */
+
+.flex_center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  flex-direction: column;
+}
+
+.header_bar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  display:flex;
+  width: 100vw;
+  backdrop-filter: blur(10px);
+  background: rgba(100, 100, 100, 0.15);
+  height: 25px;
+  margin-top: 0px;
+  justify-content: center;
+  text-align: center;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  transition: width 0.5s;
+  transition: margin-left 0.5s;
+}
+
+
+/* -- Implement Statbar -- */
+
+.statbar {
+  display: flex;
+  width: 100vw;
+  backdrop-filter: blur(30px);
+  background: rgba(70,70,70,0.3);
+  height: 50px; 
+  justify-content: center;
+  text-align: center;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.subgame_stat {
+  width: auto;
+  background: rgba(70,70,70,0.4);
+  border-radius: 10px;
+  margin: 0.4em;
+  margin-top: 0;
+}
+
+.sb_widget {
+  height:100%;
+  flex-grow:1;
+  min-width: 0;
+  flex-basis: 0;
+}
+
+.sb_center {
+  line-height: 3em;
+}
+
+.sb_play {
+  transition: 0.25s;
+  flex-grow: 0.80;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  background-color: rgba(0, 250, 150, 0.6);
+  max-width: 400px;
+}
+
+.sb_play:hover {
+  transition: 0.25s;
+  background-color: rgba(0, 220, 100, 0.8);
+}
+
+.sb_play_active {
+  transition: 0.25s;
+  background-color: rgba(0, 180, 200, 0.4);
+}
+
+.sb_settings {
+  display: flex;
+  transition: 0.25s;
+  flex-grow: 0.20;
+  background-color: rgba(0, 180, 250, 0.6);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  justify-content: center;
+  align-items: center;
+  max-width: 100px;
+  margin-right: 0.5em;
+}
+
+.sb_settings:hover {
+  transition: 0.25s;
+  background-color: rgba(0, 180, 250, 0.8);
+}
+
+
+/* -- every good codebase needs spacers -- */
+
+.spacer {
+  flex-grow: 1;
+}
+
+.large_spacer {
+  flex-grow: 10;
+}
+
+.header_button {
+  flex-grow: 2;
+  transition: color 0.5s;
+  transition: background-color 0.5s;
+  color:white;
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 25px;
+  padding: 0.2em;
+  margin-right: 2em;
+  box-shadow: 0.1em 0.1em 0.1em rgba(0,0,0,0.4);
+} 
+
+.header_button:hover {
+  transition: background-color 0.5s;
+  background-color: rgba(255,255,255,0.5)
+}
+
+.header_button_active {
+  transition: background-color 0.5s;
+  transition: color 0.5s;
+  color: black;
+  background-color: white;
+}
+
+.game_card {
+  height: 25vh;
+  background-color: rgba(255,255,255,0.2);
+  margin-right: 2em;
+  border: 3px solid rgba(0,0,0,0);
+  border-radius: 5px;
+}
+
+.game_card_selected {
+  transition: 0.5s border;
+  animation-name: selected;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  border: 3px solid white;
+}
+
+.gcc_label{
+  margin-left: 1vw;
+  width: 98vw;
+  border-bottom: 2px solid white;
+}
+
+.game_card_container {
+  margin-bottom: 1rem;
+  margin-left: 1vw;
+  margin-right: 1rem;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto; /* enable horizontal scrolling */
+  scrollbar-width: none; /* hide scrollbar (Firefox) */
+  -ms-overflow-style: none;  /* IE/Edge */
+}
+
+.game_card_container::-webkit-scrollbar {
+  display: none; /* hide scrollbar (Chrome/Safari) */
+}
+
+.game_card_container p {
+  border-bottom: 2px solid white 
+}
+
+@keyframes selected {
+  0%{
+    border: 3.0px solid white;
+  }
+  50% {
+    border: 3px solid grey;
+  }
+  100% {
+    border: 3.0px solid white;
+  }
+}

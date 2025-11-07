@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <script src="/static/gameClass.js"></script>
+    <script src="/static/lib.js"></script>
+    <script>
+      let currentIndex = 0;
+      let currentContainer = "last_played"; // default row
+      var current_tab = 0;
+      var games = [ new Game(0, "placeholder", []) ];
+      var meta_games = [];
+      var sort_playtime = [];
+      var sort_lastplayed = [];
+      var sort_alphabet = [];
+      var last_selected_el = null;
+      var archived_view = false;
+
+      function onload(){
+       getJSON('http://127.0.0.1:8000/api/games',
+         function(err, data) {
+           if (err !== null) {
+             alert('Something went wrong: ' + err);
+           } else {
+             games = data;
+             archived_view = (window.location.hash == "#archived");
+             if (archived_view) {
+               changeToTab(1);
+             }
+             init();
+             load_transition();
+           }
+         }
+       );
+      }
+
+      document.addEventListener("keydown", (e) => {
+        const container = document.getElementById(currentContainer);
+        const cards = container.querySelectorAll(".game_card");
+        if (cards.length === 0) return;
+
+        if (e.key === "ArrowRight") {
+          currentIndex = (currentIndex + 1) % cards.length;
+        }
+        else if (e.key === "ArrowLeft") {
+          currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+        }
+        else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          switchRow(1);
+          return;
+        }
+        else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          switchRow(-1);
+          return;
+        }
+        else if (e.key === "Enter") {
+          cards[currentIndex].click(); // same as selecting with mouse
+        }
+        else {
+          return;
+        }
+      
+        select(cards[currentIndex].dataset.id, cards[currentIndex]);
+        cards[currentIndex].scrollIntoView({ behavior: "smooth", inline: "center" });
+      });
+
+      function switchRow(direction) {
+        const rows = ["last_played", "most_played", "all_games"];
+        let idx = rows.indexOf(currentContainer);
+        idx = (idx + direction + rows.length) % rows.length;
+        currentContainer = rows[idx];
+        currentIndex = 0;
+        const container = document.getElementById(currentContainer);
+        const cards = container.querySelectorAll(".game_card");
+        if (cards[currentIndex] != last_selected_el) {
+          select(cards[currentIndex].dataset.id, cards[currentIndex]);
+          cards[currentIndex].scrollIntoView({ behavior: "smooth", inline: "center" });
+        }
+      }
+
+      function init(){
+        // create MetaGames, so games with subgames are handled correctly
+       // for (i in games) {
+       //   meta_games = meta_games.concat(new MetaGame(games[i]))
+       // }
+        if (archived_view) {
+          for (game of games) {
+            if (game.archived) {
+              meta_games.push(game);
+            }
+          }
+        } else {
+          meta_games = games;
+        }
+
+        if (games.length > 0){
+          sort_lastplayed = [...meta_games].sort((a, b) => b.last_launch - a.last_launch);
+          sort_playtime = [...meta_games].sort((a, b) => b.playtime - a.playtime);
+          sort_name = [...meta_games].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        for (game in meta_games){
+          document.getElementById("all_games").innerHTML+="<img src=\"/api/media?game="+sort_name[game].id+"&location=card\" class=\"game_card gc_name\" onclick=\"select("+sort_name[game].id+", this)\" data-id="+sort_name[game].id+"></img>"
+          document.getElementById("most_played").innerHTML+="<img src=\"/api/media?game="+sort_playtime[game].id+"&location=card\" class=\"game_card gc_most_played\" onclick=\"select("+sort_playtime[game].id+", this)\" data-id="+sort_playtime[game].id+"></img>"
+          document.getElementById("last_played").innerHTML+="<img src=\"/api/media?game="+sort_lastplayed[game].id+"&location=card\" class=\"game_card gc_last_played\" onclick=\"select("+sort_lastplayed[game].id+", this)\" id=\"sort_lastplayed"+game+"\" data-id="+sort_lastplayed[game].id+"></img>"
+ 
+        }
+        if (meta_games.length > 0) {
+          select(sort_lastplayed[0].id,document.getElementById("sort_lastplayed0"));
+        }
+      }
+
+      function select(id, el){
+        if (el == last_selected_el){
+          window.location = "gamedetails.html#id="+id; 
+          return;
+        }
+        if (el != null){
+          el.classList.add("game_card_selected");
+          if (last_selected_el != null) {
+            last_selected_el.classList.remove("game_card_selected");
+          }
+          last_selected_el = el;
+        }
+
+        // show background with transition
+        document.body.style.backgroundPosition="left";
+        setTimeout(() => {
+          document.body.style.backgroundImage="url(/api/media?game="+id+"&location=background)" 
+          document.body.style.backgroundPosition="center";
+        }, 100);
+      }
+
+      function changeToTab(id) {
+        if (current_tab != id){
+          var element = document.getElementsByClassName("header_button")[id];
+          var last_element = document.getElementsByClassName("header_button")[current_tab];
+          element.classList.add("header_button_active");
+          last_element.classList.remove("header_button_active");
+          
+          current_tab = id;
+          if (current_tab == 0) {
+            window.location = "/static/index.html";
+          } else if (current_tab == 1 && !archived_view) {
+            window.location = "/static/index.html#archived";
+            window.location.reload();
+          } else if (current_tab == 2) {
+            window.location = "/static/add.html";
+          }
+        }
+      }
+    </script>
+  </head>
+  <body onload="onload()">
+    <div id="fade-overlay"></div>
+    <div class="blur_layer">
+      <div class="header_bar">
+        <a class="large_spacer"></a>
+        <a class="header_button header_button_active" onclick="changeToTab(0)"><b>ALL</b></a>  
+        <a class="spacer"></a>
+        <a class="header_button" onclick="changeToTab(1)"><b>ARCHIVED</b></a>
+        <a class="spacer"></a>
+        <a class="header_button" onclick="changeToTab(2)"><b>ADD</b></a>
+        <a class="large_spacer"></a>
+      </div>
+      <p class="gcc_label"><b>LAST PLAYED</b></p>
+      <div class="game_card_container" id="last_played">
+        
+      </div>
+      <p class="gcc_label"><b>MOST PLAYED</b></p>
+      <div class="game_card_container" id="most_played">
+
+      </div>
+      <p class="gcc_label"><b>ALL</b></p>
+      <div class="game_card_container" id="all_games">
+        
+      </div>
+    </div>
+  </body>
+</html>
