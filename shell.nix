@@ -11,12 +11,6 @@ in
       pkg-config
       openssl
       glib
-      gtk3
-      webkitgtk_4_1
-      libsoup
-      libsoup_3
-      librsvg
-      nodePackages.npm
     ];
     RUSTC_VERSION = overrides.toolchain.channel;
     # https://github.com/rust-lang/rust-bindgen#environment-variables
