@@ -1,7 +1,11 @@
 use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Mutex, atomic::AtomicU32};
 use std::collections::HashMap;
 use rocket::serde::{Deserialize, Serialize};
-use rusqlite::Connection;
+use rocket_db_pools::{sqlx, Database};
+
+#[derive(Database)]
+#[database("sqlite_db")]
+pub struct Db(sqlx::SqlitePool);
 
 #[derive(PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub enum HistoryType {
@@ -72,6 +76,4 @@ pub struct GameRuntime {
     pub running_since: AtomicIsize,
     pub pid: AtomicU32, 
 }
-
-pub struct DbConnection (pub Mutex<Connection>);
 
