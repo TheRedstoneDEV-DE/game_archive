@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO games (name) VALUES (?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "c9c6f3ad5b0d911e09ad165fb112b0edfd4a1fb1a069b5b902237a0a945970e9"
+}

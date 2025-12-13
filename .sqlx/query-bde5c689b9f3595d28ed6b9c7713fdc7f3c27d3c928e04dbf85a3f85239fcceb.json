@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO compat_tools (name,executable,environment) VALUES (?,?,?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "bde5c689b9f3595d28ed6b9c7713fdc7f3c27d3c928e04dbf85a3f85239fcceb"
+}

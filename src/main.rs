@@ -1,14 +1,11 @@
-use std::fs::File;
-use std::io::Write;
-use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Arc, Mutex, atomic::AtomicU32};
+use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Arc, atomic::AtomicU32};
 use std::process::Command;
 use rocket::fs::FileServer;
 use rocket::fairing::AdHoc;
 use rocket_db_pools::Database;
-use rocket::serde::{json, json::serde_json};
-use rocket::{get, put, launch, routes, State};
+use rocket::launch;
 
-//mod routes;
+mod routes;
 mod structures;
 //mod database_helper;
 
@@ -18,28 +15,46 @@ async fn run_migrations(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"CREATE TABLE IF NOT EXISTS artworks (
              id INTEGER PRIMARY KEY AUTOINCREMENT,
-             card_mime_type TEXT,
-             card_blob BLOB,
-             background_mime_type TEXT,
-             background_blob BLOB,
+             mime_type TEXT,
+             blob BLOB,
+             type TEXT,
              game INT NOT NULL,
              FOREIGN KEY('game')
                 REFERENCES 'games'('id')
                 ON DELETE CASCADE
+                ON UPDATE CASCADE,
+            UNIQUE (game, type)
+        );
+        CREATE TABLE IF NOT EXISTS subgame_covers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mime_type TEXT NOT NULL,
+            image BLOB NOT NULL,
+            subgame INT NOT NULL,
+            FOREIGN KEY('subgame')
+                REFERENCES 'subgames'('id')
                 ON UPDATE CASCADE
+                ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS games (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS subgames (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            is_subgame BOOL NOT NULL,
-            related_to INTEGER,
             playtime REAL,
             last_launch INTEGER,
-            is_archived BOOL,
-            compat_tool INT NOT NULL,
-            FOREIGN KEY('compat_tool') 
+            is_archived BOOL NOT NULL DEFAULT false,
+            launch_config TEXT NOT NULL DEFAULT '{"arguments": [], "working_directory":"", "game_prefix":"", "executable":"", "environment":{}, "archive_file": ""}',
+            compat_tool INT,
+            parent INT NOT NULL,
+            FOREIGN KEY ('compat_tool')
                 REFERENCES 'compat_tools'('id')
+                ON UPDATE CASCADE,
+            FOREIGN KEY ('parent')
+                REFERENCES 'games'('id')
                 ON UPDATE CASCADE
+                ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS compat_tools (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,9 +110,9 @@ fn rocket() -> _ {
             rocket
         }))
         .manage(runtime)
-        //.mount("/api", routes::game::routes())
-        //.mount("/api", routes::media::routes())
-        //.mount("/api", routes::backend_launch::routes())
-        //.mount("/api", routes::game_config::routes())
-        //.mount("/static", FileServer::from("static"))
+        .mount("/api", routes::game::routes())
+        .mount("/api", routes::media::routes())
+        .mount("/api", routes::backend_launch::routes())
+        .mount("/api", routes::game_config::routes())
+        .mount("/static", FileServer::from("static"))
 }

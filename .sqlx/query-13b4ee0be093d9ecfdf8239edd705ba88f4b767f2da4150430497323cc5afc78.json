@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, name, playtime, last_launch, is_archived, parent FROM subgames WHERE parent = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "playtime",
+        "ordinal": 2,
+        "type_info": "Float"
+      },
+      {
+        "name": "last_launch",
+        "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "is_archived",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "parent",
+        "ordinal": 5,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "13b4ee0be093d9ecfdf8239edd705ba88f4b767f2da4150430497323cc5afc78"
+}

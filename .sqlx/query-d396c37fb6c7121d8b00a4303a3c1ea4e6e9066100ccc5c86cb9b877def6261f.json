@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO subgames (name,playtime,last_launch,is_archived,parent) VALUES (?,?,?,?,?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "d396c37fb6c7121d8b00a4303a3c1ea4e6e9066100ccc5c86cb9b877def6261f"
+}

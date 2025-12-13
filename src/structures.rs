@@ -29,32 +29,33 @@ pub struct GameHistory {
 
 #[derive(Deserialize, Serialize)]
 pub struct MetaGame {
-    pub id: u32,
-    pub name: String,
-    pub playtime: f32,
-    pub last_launch: i64,
-    pub archived: bool,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub playtime: Option<f64>,
+    pub last_launch: Option<i64>,
+    pub is_archived: Option<bool>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct Game {
-    pub id: u32,
+    pub id: i64,
     pub name: String,
-    pub sub_games: Vec<SubGame>,
+    pub subgames: Option<Vec<SubGame>>
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct SubGame {
-    pub id: u32,
+    pub id: i64,
     pub name: String,
-    pub playtime: f32,
-    pub last_launch: i64,
-    pub archived: bool,
+    pub playtime: Option<f64>,
+    pub last_launch: Option<i64>,
+    pub is_archived: bool,
+    pub parent: i64
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct CompatTool {
-   pub id: u32,
+   pub id: i64,
    pub name:String,
    pub executable: String,
    pub environment: HashMap<String,String>,

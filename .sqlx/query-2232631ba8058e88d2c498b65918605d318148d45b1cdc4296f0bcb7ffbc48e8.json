@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE subgames SET name = ?, playtime = ?, last_launch = ?, is_archived = ?, parent = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "2232631ba8058e88d2c498b65918605d318148d45b1cdc4296f0bcb7ffbc48e8"
+}
