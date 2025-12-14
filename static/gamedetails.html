@@ -12,7 +12,7 @@
 
       function onload() {
         var gameID = parseIdFromUrl();            
-        getJSON('http://127.0.0.1:8000/api/games?id='+gameID,
+        getJSON('/api/games?id='+gameID,
           function(err, data) {
             if (err !== null) {
               alert('Something went wrong: ' + err);
@@ -33,7 +33,7 @@
         }
 
         document.getElementById("sb_gamename").innerHTML=`<b>${getSubgameByID(game,id).name}:</b>`;
-        document.getElementById("sb_playtime").innerHTML=`Playtime: ${getSubgameByID(game,id).playtime.toFixed(2)}h`;
+        document.getElementById("sb_playtime").innerHTML=`Playtime: ${(getSubgameByID(game,id).playtime ?? 0).toFixed(2)}h`;
         document.getElementById("sb_lastplayed").innerHTML=`Last played: ${formatDate(getSubgameByID(game,id).last_launch, 'de-DE')}`;
         document.getElementById("sb_play").onclick="launch("+id+")";
         document.getElementById("sb_settings").onclick="settings("+id+")";
@@ -46,12 +46,12 @@
         document.body.style.backgroundImage="url(/api/media?game="+game.id+"&location=background)";
         var root_element = document.getElementsByClassName("blur_layer")[0];
         var images = "";
-        if (game.sub_games.length > 1){ 
-          for (sub_game of game.sub_games){
-            images += `<img src="/api/media?game=${sub_game.id}&location=card" class="game_card" id="subgame${sub_game.id}" onclick="selectSubGame(this, ${sub_game.id})" data-id="${sub_game.id}"></img>`;
+        if (game.subgames.length > 1){ 
+          for (sub_game of game.subgames){
+            images += `<img src="/api/subgame_cover?id=${sub_game.id}" class="game_card" id="subgame${sub_game.id}" onclick="selectSubGame(this, ${sub_game.id})" data-id="${sub_game.id}"></img>`;
           }
         } else {
-            images = `<img src="/api/media?game=${game.id}&location=card" id="subgame${game.sub_games[0].id}" data-id="${game.sub_games[0].id}" class="game_card game_card_selected" >`
+            images = `<img src="/api/media?game=${game.id}&location=card" id="subgame${game.subgames[0].id}" data-id="${game.subgames[0].id}" class="game_card game_card_selected" >`
         }
 
         root_element.innerHTML += `
@@ -59,11 +59,11 @@
           ${images}
           </div>
           <div class="statbar subgame_stat">
-              <a class="sb_widget sb_center sb_name" id="sb_gamename"><b>${game.sub_games[0].name}:</b></a>
-              <a class="sb_widget sb_center" id="sb_playtime">Playtime: ${game.sub_games[0].playtime.toFixed(2)}h</a>
-              <a class="sb_widget sb_center" id="sb_lastplayed">Last played: ${formatDate(game.sub_games[0].last_launch, 'de-DE')}</a>
-              <a class="sb_widget sb_center sb_play" id="sb_play" onclick="launch(${game.sub_games[0].id})">Play</a>
-              <a class="sb_widget sb_center sb_settings" id="sb_settings" onclick="settings(${game.sub_games[0].id})">
+              <a class="sb_widget sb_center sb_name" id="sb_gamename"><b>${game.subgames[0].name}:</b></a>
+              <a class="sb_widget sb_center" id="sb_playtime">Playtime: ${(game.subgames[0].playtime ?? 0).toFixed(2)}h</a>
+              <a class="sb_widget sb_center" id="sb_lastplayed">Last played: ${formatDate(game.subgames[0].last_launch, 'de-DE')}</a>
+              <a class="sb_widget sb_center sb_play" id="sb_play" onclick="launch(${game.subgames[0].id})">Play</a>
+              <a class="sb_widget sb_center sb_settings" id="sb_settings" onclick="settings(${game.subgames[0].id})">
                 <svg fill="#ffffff" height="70%" width="auto" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 512 512">
                   <g>
                     <g>
@@ -81,7 +81,7 @@
               </a> 
             </div>
           `;
-        selectSubGame(document.getElementById("subgame"+game.sub_games[0].id), game.sub_games[0].id);
+        selectSubGame(document.getElementById("subgame"+game.subgames[0].id), game.subgames[0].id);
           document.addEventListener("keydown", (e) => {
           const container = document.getElementsByClassName("content")[0];
           const cards = container.querySelectorAll(".game_card");
@@ -117,7 +117,7 @@
       function launch(id){
         document.getElementById("sb_play").classList.add("sb_play_active");
         document.getElementById("sb_play").innerHTML="[Launching...]"
-        setTimeout(() => getJSON('http://127.0.0.1:8000/api/launch?id='+id,
+        setTimeout(() => getJSON('/api/launch?id='+id,
           function(err, data) {
             if (err !== null) {
               alert('Something went wrong: ' + err);

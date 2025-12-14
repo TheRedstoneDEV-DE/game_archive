@@ -17,7 +17,7 @@
       var archived_view = false;
 
       function onload(){
-       getJSON('http://127.0.0.1:8000/api/games',
+       getJSON('/api/games',
          function(err, data) {
            if (err !== null) {
              alert('Something went wrong: ' + err);
