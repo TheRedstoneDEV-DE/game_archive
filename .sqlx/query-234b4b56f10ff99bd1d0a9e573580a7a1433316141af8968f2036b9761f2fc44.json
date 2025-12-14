@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT blob, mime_type FROM artworks WHERE type = ? AND game = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "blob",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "mime_type",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "234b4b56f10ff99bd1d0a9e573580a7a1433316141af8968f2036b9761f2fc44"
+}

@@ -1,71 +1,135 @@
-use rocket::{routes, get, State, put};
+use rocket::{routes, get, post, delete};
+use rocket::http::Status;
+use std::collections::HashMap;
+use rocket_db_pools::Connection;
 use rocket::serde::json;
-use std::sync::Arc;
-use crate::structures::*;
-use crate::database_helper;
+use crate::structures::{Db, GameConfig, CompatTool};
+use rocket_db_pools::sqlx;
 use serde::{Serialize, Deserialize};
-use rusqlite::params;
 
 
 #[derive(Deserialize, Serialize)]
 struct MetaCompatTool {
-    pub id: u32,
+    pub id: i64,
     pub name: String
 }
 
-#[get("/game_conf?<id>")]
-fn get_game_config(id: i64, db:  &State<Arc<DbConnection>>) -> Option<json::Json<GameConfig>>{
-    let conn = db.0.lock().unwrap();
-    return Some(json::Json(database_helper::get_game_conf(conn, id)?));
+#[get("/launch_config?<id>")]
+async fn get_game_config(id: i64, mut db:  Connection<Db>) -> Option<String>{
+    Some(
+        sqlx::query!(
+            "SELECT launch_config FROM subgames WHERE id = ?",
+            id
+        ).fetch_optional(&mut **db)
+        .await
+        .ok()??
+        .launch_config
+    )
 }
 
-#[put("/game_conf?<id>", format="json", data="<data>")]
-fn put_game_conf(db: &State<Arc<DbConnection>>, data: json::Json<GameConfig>, id: i64) -> Option<json::Json<GameConfig>>{
-    let conn = db.0.lock().unwrap();
+#[post("/launch_config?<id>", format="json", data="<data>")]
+async fn post_game_config(mut db: Connection<Db>, data: json::Json<GameConfig>, id: i64) -> Option<json::Json<GameConfig>>{
     let stringified_json = json::serde_json::to_string_pretty(&data.clone().into_inner()).ok()?;
-    let _ = conn.execute("UPDATE games SET launch_conf = ?1 WHERE id = ?2)", params![stringified_json, id]).ok()?;
+    sqlx::query!(
+        "UPDATE subgames SET launch_config = ? WHERE id = ?",
+        stringified_json,
+        id
+    ).execute(&mut **db)
+    .await
+    .ok()?;
     Some(data)
 }
 
-#[get("/compat_tool?<id>")]
-fn get_compat_tool(id: i64, db: &State<Arc<DbConnection>>) -> Option<json::Json<CompatTool>> {
-    let conn = db.0.lock().unwrap();
-    return Some(json::Json(database_helper::get_compat_tool(conn, id)?));
+#[get("/compat_tools?<id>")]
+async fn get_compat_tool(id: i64, mut db: Connection<Db>) -> Option<json::Json<CompatTool>> {
+    let rows = sqlx::query!(
+        "SELECT id, name, executable, environment FROM compat_tools WHERE id = ?",
+        id
+    ).fetch_optional(&mut **db)
+    .await
+    .ok()??;
+
+    Some(
+        json::Json(CompatTool { 
+            id: rows.id,
+            name: rows.name,
+            executable: rows.executable,
+            environment: json::serde_json::from_str::<HashMap<String, String>>(&rows.environment?).ok()? 
+        })
+    )
 }
 
 #[get("/compat_assign?<tool>&<game>")]
-fn get_compat_assign(tool: i64, game: i64, db: &State<Arc<DbConnection>>) -> Option<String> {
-    let ret_str: String = format!["{} -> {}", tool, game];
-    let conn = db.0.lock().unwrap();
-    let _ = conn.execute("UPDATE games SET compat_tool = ?1 WHERE id = ?2", params![tool, game]).ok()?;
-    Some(ret_str)
+async fn get_compat_assign(tool: i64, game: i64, mut db: Connection<Db>) -> Option<Status> {
+    sqlx::query!(
+        "UPDATE subgames SET compat_tool = ?1 WHERE id = ?2",
+        tool,
+        game
+    ).execute(&mut **db)
+    .await
+    .ok()?;
+    
+    Some(Status::Ok)
 }
 
 #[get("/compat_tools")]
-fn get_compat_tools(db: &State<Arc<DbConnection>>) -> Option<json::Json<Vec<MetaCompatTool>>> {
-    let conn = db.0.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT id, name FROM compat_tools").ok()?;
-    let compat_tools = stmt.query_map([], |row| {
-        Ok(MetaCompatTool{
-            id: row.get(0).unwrap(),
-            name: row.get(1).unwrap()
-        })
-    }).ok()?;
-    Some(json::Json(compat_tools.collect::<Result<Vec<_>, _>>().ok()?))
+async fn get_compat_tools(mut db: Connection<Db>) -> Option<json::Json<Vec<MetaCompatTool>>> {
+    Some(json::Json(
+        sqlx::query_as!(
+             MetaCompatTool,
+             "SELECT id, name FROM compat_tools"
+         ).fetch_all(&mut **db)
+         .await
+         .ok()?
+    ))
 }
 
-#[put("/compat_tool", format="json", data="<data>")]
-fn put_compat_tool(db: &State<Arc<DbConnection>>, data: json::Json<CompatTool>) -> Option<json::Json<CompatTool>> {
-    let conn = db.0.lock().unwrap();
-    let env_data = json::serde_json::to_string(&data.environment).ok()?;
+#[post("/compat_tools", format="json", data="<data>")]
+async fn post_compat_tools(mut db: Connection<Db>, data: json::Json<CompatTool>) -> Option<json::Json<CompatTool>> {
+    let env_data = json::serde_json::to_string_pretty(&data.environment).ok()?;
     if data.id != 0 {
-        let _ = conn.execute("UPDATE compat_tools SET name = ?1, executable = ?2, environment = ?3 WHERE id = ?4", params![data.name, data.executable, env_data, data.id]).ok()?; 
-        return Some(data);
+        sqlx::query!(
+            "UPDATE compat_tools SET name = ?, executable = ?, environment = ? WHERE id = ?",
+            data.name,
+            data.executable,
+            env_data,
+            data.id
+        ).execute(&mut **db)
+        .await
+        .ok()?;
+
+        return Some(data)
     }
-    let _ = conn.execute("INSERT INTO compat_tools(name, executable, environment) VALUES ?1, ?2, ?3", params![data.name, data.executable, env_data]).ok()?;
-    Some(data)
+    let row = sqlx::query!(
+        "INSERT INTO compat_tools (name,executable,environment) VALUES (?,?,?); SELECT last_insert_rowid() AS id;",
+        data.name,
+        data.executable,
+        env_data,
+    ).fetch_optional(&mut **db)
+    .await
+    .ok()??;
+
+    return Some(json::Json(CompatTool { 
+            id: row.id as i64,
+            name: data.name.clone(),
+            executable: data.executable.clone(),
+            environment: data.environment.clone() 
+    }));
+
+}
+
+#[delete("/compat_tools?<id>")]
+async fn delete_compat_tools(id: i64, mut db: Connection<Db>) -> Option<Status> {
+    sqlx::query!(
+        "DELETE FROM compat_tools WHERE id = ?",
+        id
+    ).execute(&mut **db)
+    .await
+    .ok()?;
+
+    return Some(Status::Gone)
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![get_game_config, put_game_conf, get_compat_tool, get_compat_tools, put_compat_tool, get_compat_assign]
+    routes![get_game_config, post_game_config, get_compat_tool, post_compat_tools, get_compat_tools, get_compat_assign, delete_compat_tools]
 }

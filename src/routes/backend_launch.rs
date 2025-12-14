@@ -1,24 +1,93 @@
 use rocket::{get, routes, State};
 use rocket::serde::json;
-use rusqlite::params;
 use chrono::Utc;
+use uuid::timestamp;
 use std::thread;
+use std::collections::HashMap;
 use std::sync::{atomic::Ordering, Arc};
-use std::process::Command;
+use tokio::process::Command;
 use nix::unistd::Pid;
 use nix::sys::{signal, signal::Signal};
+use rocket_db_pools::{Connection, sqlx};
+use rocket_db_pools::sqlx::Acquire;
 
-use crate::structures::*;
-use crate::database_helper::{get_compat_tool, get_game_conf, add_to_history};
+use crate::structures::{Db, GameConfig, CompatTool, GameRuntime, GameHistory, HistoryType, HistoryGame};
+
+struct IntermediateTimestamp {
+    timestamp: Option<String>,
+    game: i64,
+    total_playtime: i64
+}
+
+pub async fn get_game_conf(db: &mut Connection<Db>, id: i64) -> Option<GameConfig> {
+    let conn = db.acquire().await.ok()?;
+    let row = sqlx::query!(
+        "SELECT launch_config FROM subgames WHERE id = ?",
+        id
+    ).fetch_optional(conn)
+    .await
+    .ok()??;
+    
+    Some(json::serde_json::from_str::<GameConfig>(&row.launch_config).ok()?)
+}
+
+pub async fn get_compat_tool(db: &mut Connection<Db>, id: i64) -> Option<CompatTool> {
+    let conn = db.acquire().await.ok()?;
+    let rows = sqlx::query!(
+        "SELECT ct.id, ct.name, ct.executable, ct.environment
+        FROM subgames g
+        JOIN compat_tools ct ON g.compat_tool = ct.id
+        WHERE g.id = ?;",
+        id
+    ).fetch_optional(conn)
+    .await
+    .ok()??;
+
+    Some(
+        CompatTool { 
+            id: rows.id,
+            name: rows.name,
+            executable: rows.executable,
+            environment: json::serde_json::from_str::<HashMap<String, String>>(&rows.environment?).ok()? 
+        }
+    )
+}
+
+pub async fn add_to_history(db: &mut Connection<Db>, timestamp_start: i64, timestamp_end: i64, game: i64) -> Result<(), Box<dyn std::error::Error>>{
+    // Only insert new row when last game session was more than 600s away (keep the table clean) 
+    let conn = db.acquire().await?;
+    sqlx::query!(
+        r#"
+        INSERT INTO history (id, game, timestamp_start, timestamp_end)
+        VALUES (
+            (
+                SELECT id
+                FROM history
+                WHERE game = ?3
+                  AND (?2 - timestamp_end) <= 600
+                ORDER BY timestamp_end DESC
+                LIMIT 1
+            ),?3,?2,?1
+        )
+        
+        ON CONFLICT(id) DO UPDATE SET
+            timestamp_end = excluded.timestamp_end;
+        "#,
+        timestamp_end,
+        timestamp_start,
+        game
+    ).execute(conn).await?;
+    Ok(())
+}
 
 #[get("/status")]
-fn get_status(game_runtime: &State<Arc<GameRuntime>>) -> String{
+async fn get_status(game_runtime: &State<Arc<GameRuntime>>) -> String{
     let game_runtime: Arc<GameRuntime> = game_runtime.inner().clone();
     format!("{{\"current_game\": {}, \"game_running\": {}, \"running_since\": {}}}", game_runtime.current_game.load(Ordering::Relaxed), game_runtime.game_running.load(Ordering::Relaxed), game_runtime.running_since.load(Ordering::Relaxed))
 }
 
 #[get("/terminate")]
-fn terminate(game_runtime: &State<Arc<GameRuntime>>) -> String{
+async fn terminate(game_runtime: &State<Arc<GameRuntime>>) -> String{
     let game_runtime: Arc<GameRuntime> = game_runtime.inner().clone();
     if game_runtime.game_running.load(Ordering::SeqCst) {
        let pid = Pid::from_raw(game_runtime.pid.load(Ordering::Relaxed).try_into().unwrap());
@@ -29,37 +98,37 @@ fn terminate(game_runtime: &State<Arc<GameRuntime>>) -> String{
 }
 
 #[get("/history?<scope>&<date>")]
-fn get_history(db: &State<Arc<DbConnection>>, scope: &str, date: Option<String>) -> Option<json::Json<Vec<GameHistory>>> {
-    let conn = db.0.lock().unwrap();
+async fn get_history( mut db: Connection<Db>, scope: &str, date: Option<String>) -> Option<json::Json<Vec<GameHistory>>> {
     let mut param = "now".to_string();
     if let Some(date) = date {
         param = date;
     }
-    let sql = match scope {
-        "week" => Some("SELECT 
-                date(timestamp_start, 'unixepoch') AS day,
+    let intermediate_timestamps = match scope {
+        "week" => Some(sqlx::query_as!(IntermediateTimestamp,"SELECT 
+                date(timestamp_start, 'unixepoch') AS timestamp,
                 game,
                 SUM(timestamp_end - timestamp_start) AS total_playtime
             FROM history
             WHERE timestamp_start >= strftime('%s', ?1, '-7 days')
             AND timestamp_start <= strftime('%s', ?1, '+1 days')
-            GROUP BY day, game
-            ORDER BY day DESC;"),
-        "month" => Some("SELECT strftime('%Y-%W', timestamp_start, 'unixepoch') AS week, 
+            GROUP BY timestamp, game
+            ORDER BY timestamp DESC;", param).fetch_all(&mut **db).await.ok()?),
+        "month" => Some(sqlx::query_as!(IntermediateTimestamp, "SELECT strftime('%Y-%W', timestamp_start, 'unixepoch') AS timestamp, 
                 game, 
                 SUM(timestamp_end - timestamp_start) AS total_playtime 
             FROM history 
             WHERE strftime('%Y-%m', timestamp_start, 'unixepoch') = strftime('%Y-%m', ?1)
-            GROUP BY week, game 
-            ORDER BY week DESC;"),
-        "year" => Some("SELECT 
-                strftime('%m', timestamp_start, 'unixepoch') AS month,
+            GROUP BY timestamp, game 
+            ORDER BY timestamp DESC;", param).fetch_all(&mut **db).await.ok()?),
+
+        "year" => Some(sqlx::query_as!(IntermediateTimestamp, "SELECT 
+                strftime('%m', timestamp_start, 'unixepoch') AS timestamp,
                 game,
                 SUM(timestamp_end - timestamp_start) AS total_playtime
             FROM history
             WHERE strftime('%Y', timestamp_start, 'unixepoch') = strftime('%Y', ?1)
-            GROUP BY month, game
-            ORDER BY month DESC;"),
+            GROUP BY timestamp, game
+            ORDER BY timestamp DESC;", param).fetch_all(&mut **db).await.ok()?),
         _ => None
     };
     
@@ -69,14 +138,7 @@ fn get_history(db: &State<Arc<DbConnection>>, scope: &str, date: Option<String>)
         "year" => HistoryType::MONTH,
         _ => HistoryType::DAY
     };
-    // TODO: implement  filters (date, month, year)
-    let mut stmt = conn.prepare(sql?).ok()?;
-    let rows = stmt.query_map(params![param], |row| {
-       let week = row.get::<usize, String>(0)?;
-       let game = row.get::<usize, i64>(1)?;
-       let time = row.get::<usize, i64>(2)?;
-       Ok((week, game, time))
-    }).ok()?;
+     
     let mut last_date = "".to_string();
     let mut current_obj: GameHistory = GameHistory {
         r#type: HistoryType::WEEK,
@@ -86,8 +148,10 @@ fn get_history(db: &State<Arc<DbConnection>>, scope: &str, date: Option<String>)
     let mut obj_list: Vec<GameHistory> = vec![];
 
 
-    for row in rows {
-        let (week, game, time): (String, i64, i64) = row.ok()?;
+    for timestamp in intermediate_timestamps? {
+        let week = timestamp.timestamp?;
+        let game = timestamp.game;
+        let time = timestamp.total_playtime;
         if last_date == week {
             current_obj.games.push(HistoryGame{
                 id: game,
@@ -117,21 +181,25 @@ fn get_history(db: &State<Arc<DbConnection>>, scope: &str, date: Option<String>)
 }
 
 #[get("/launch?<id>")]
-fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, db: &State<Arc<DbConnection>>) -> String {
+async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Connection<Db>) -> String {
+    println!("Starting Game!");
     let game_runtime: Arc<GameRuntime> = game_runtime.inner().clone();
-    let db: Arc<DbConnection> = db.inner().clone();
     if !game_runtime.game_running.swap(true, Ordering::SeqCst) {
-        thread::spawn(move || {
-            if let Some(compat_tool) = get_compat_tool(db.0.lock().unwrap(), id) && let Some(game_config) = get_game_conf(db.0.lock().unwrap(), id) {
+        println!("Validated that no other game is running!");
+            if let Some(compat_tool) = get_compat_tool(&mut db, id).await && let Some(game_config) = get_game_conf(&mut db, id).await {
                 let arguments: Vec<String> = vec![game_config.executable].iter().chain(game_config.arguments.iter()).cloned().collect();
                 let environment = compat_tool.environment.into_iter().chain(game_config.environment);
                 let game_start = Utc::now();
-                game_runtime.running_since.store(game_start.timestamp() as isize, Ordering::Relaxed);
+                let game_start_unix = Utc::now().timestamp();
+                game_runtime.running_since.store(game_start_unix as isize, Ordering::Relaxed);
                 game_runtime.current_game.store(id as isize, Ordering::Relaxed);
 
                 if game_config.archive_file != "".to_string() {
-                    // mount game's Squashfs
+                    //TODO: [IMPL ARCHIVE SYSTEM] mount game's Squashfs
                 }
+                println!("Starting Process: {} run {:?}", compat_tool.executable, arguments);
+                println!("In working_directory: {}", game_config.working_directory);
+                println!("With Environment: {:?}", environment);
                 let child = Command::new(compat_tool.executable)
                     .current_dir(game_config.working_directory)
                     .arg("run")
@@ -141,18 +209,33 @@ fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, db: &State<Arc<D
                     .envs(environment)
                     .spawn();
                 if let Ok(mut child) = child {
-                    game_runtime.pid.store(child.id(), Ordering::Relaxed);
-                    child.wait().expect("Process should be running!");
+                    if let Some(pid) = child.id() {
+                        game_runtime.pid.store(pid, Ordering::Relaxed);
+                    } else {
+                        println!("Unable to get process ID!");
+                    }
+
+                    child.wait().await.expect("Process should be running!"); // Wait for tha child
+                                                                             // to exit
+                                                                            
                     game_runtime.game_running.store(false, Ordering::SeqCst);
-                    let conn = db.0.lock().unwrap();
                     let playtime = ((Utc::now() - game_start).num_minutes() as f32) / 60.0;
-                    conn.execute("UPDATE games SET playtime = playtime + ?1, last_launch = ?2 WHERE id = ?3",
-                        params![playtime, game_start.timestamp(), id]
-                    ).unwrap_or_else(|_|{
-                      0 
-                    });
+                    let row = sqlx::query!(
+                        "UPDATE subgames SET playtime = playtime + ?, last_launch = ? WHERE id = ?",
+                        playtime, 
+                        game_start_unix, 
+                        id
+                    ).execute(&mut **db)
+                    .await;
+                    if let Ok(_row) = row {
+                        println!("Updated game stats!");
+
+                    } else {
+                        println!("Failed to update game stats!");
+                    }
+
                     println!("Adding to history...");
-                    add_to_history(conn, game_start.timestamp(), Utc::now().timestamp(), id).unwrap_or_else(|err|{
+                    add_to_history(&mut db, game_start.timestamp(), Utc::now().timestamp(), id).await.unwrap_or_else(|err|{
                         println!("ERROR! {}", err);
                         ()
                     });
@@ -163,7 +246,6 @@ fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, db: &State<Arc<D
                 game_runtime.game_running.store(false, Ordering::SeqCst);
             }
             
-         });
     } else {
         return "{\"status\":\"FAILED: a game is already running!\"}".to_string();
     }

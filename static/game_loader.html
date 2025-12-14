@@ -16,7 +16,7 @@
          setInterval(displayElapsed, 500);
        }
       function getStatus() {
-        getJSON('http://127.0.0.1:8000/api/status',
+        getJSON('/api/status',
            function(err, data) {
              if (err !== null) {
                alert('Something went wrong: ' + err);

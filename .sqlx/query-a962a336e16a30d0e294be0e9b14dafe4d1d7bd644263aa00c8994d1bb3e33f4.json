@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO compat_tools (name,executable,environment) VALUES (?,?,?); SELECT last_insert_rowid() AS id;",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a962a336e16a30d0e294be0e9b14dafe4d1d7bd644263aa00c8994d1bb3e33f4"
+}

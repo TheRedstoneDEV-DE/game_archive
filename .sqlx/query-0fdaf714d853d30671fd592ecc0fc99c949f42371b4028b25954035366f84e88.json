@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT g.id AS id,\n                  g.name AS name, \n                  SUM(s.playtime) AS playtime, \n                  MAX(s.last_launch) AS last_launch,\n                  COALESCE(MIN(s.is_archived), 0) AS is_archived\n            FROM games g \n            LEFT JOIN subgames s ON g.id = s.parent\n            GROUP BY g.id, g.name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "playtime",
+        "ordinal": 2,
+        "type_info": "Float"
+      },
+      {
+        "name": "last_launch",
+        "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "is_archived",
+        "ordinal": 4,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "0fdaf714d853d30671fd592ecc0fc99c949f42371b4028b25954035366f84e88"
+}

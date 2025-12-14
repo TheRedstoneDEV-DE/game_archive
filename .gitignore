@@ -8,5 +8,7 @@
 
 /media
 
+data.sqlite
+
 .session
 .webdev

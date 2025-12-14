@@ -17,16 +17,52 @@ function parseIdFromUrl() {
   return parseInt(window.location.hash.replace("#id=", ""));
 }
 
+async function getJSONAsync(url) {
+  var resp = await fetch(url,{method: "GET"});
+  return await resp.json();
+}
+
 function getSubgameByID(game, id) {
-  for (sub_game of game.sub_games) {
+  for (sub_game of game.subgames) {
     if (sub_game.id == id){
       return sub_game;
     }
   }
 }
 
+async function postImage(url, data){
+  return await fetch(url, {
+    method: "POST",
+    body: data
+  });
+}
+
+async function postJSON(url, json) {
+  var response = await fetch(url, {
+    method: "POST",
+    body: json,
+    headers: {
+      "Content-type": "application/json; charset=UTF-8"
+    }
+  });
+
+  return await response.json();
+} 
+
+function toHashMap(input) {
+  const pairs = input.split(';');
+
+  const hashMap = pairs.reduce((acc, pair) => {
+    const [key, value] = pair.split(',');
+    acc[key] = value;
+    return acc;
+  }, {});
+
+  return hashMap;
+}
+
 function formatDate(date, locale){
-  if (date != 0){
+  if (date != 0 && date != null){
     return new Intl.DateTimeFormat(locale, {
       day: '2-digit',
       month: '2-digit',

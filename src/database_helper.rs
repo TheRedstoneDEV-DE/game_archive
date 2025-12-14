@@ -5,54 +5,6 @@ use rocket::serde::json::serde_json;
 
 use crate::structures::{CompatTool, GameConfig};
 
-pub fn create_tables(conn: &Connection) -> Result<(), Box<dyn std::error::Error>> {
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
-    conn.execute(
-         "CREATE TABLE IF NOT EXISTS artworks (
-             id INTEGER PRIMARY KEY AUTOINCREMENT,
-             card_mime_type TEXT,
-             card_blob BLOB,
-             background_mime_type TEXT,
-             background_blob BLOB
-         )",
-         [],
-    )?;
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS games (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            is_subgame BOOL NOT NULL,
-            related_to INTEGER,
-            playtime REAL,
-            last_launch INTEGER,
-            is_archived BOOL,
-            FOREIGN KEY('media_id') REFERENCES 'artworks'('id'),
-            FOREIGN KEY('compat_tool') REFERENCES 'compat_tools'('id')
-        )",
-        [],
-    )?;
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS compat_tools (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            executable TEXT NOT NULL,
-            environment TEXT
-        )",
-        []
-    )?;
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp_start INTEGER NOT NULL,
-            timestamp_end INTEGER NOT NULL,
-            game INTEGER NOT NULL,
-            FOREIGN KEY('game') REFERENCES 'games'('id')
-        )",
-        []
-    )?; 
-    Ok(())
-}
-
 pub fn get_compat_tool(conn: MutexGuard<'_,Connection>, id: i64) -> Option<CompatTool> {
     let mut stmt = conn.prepare("SELECT compat_tools.* FROM games JOIN compat_tools ON games.compat_tool = compat_tools.id WHERE games.id = ?1").ok()?;
     let (comp_id, name, executable, environment): (Result<i64,_>, Result<String,_>, Result<String,_>, Result<String,_>) = stmt.query_row(params![id], |row| {

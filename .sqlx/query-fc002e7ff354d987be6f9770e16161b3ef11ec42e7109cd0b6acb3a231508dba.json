@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE compat_tools SET name = ?, executable = ?, environment = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "fc002e7ff354d987be6f9770e16161b3ef11ec42e7109cd0b6acb3a231508dba"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT launch_config FROM subgames WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "launch_config",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "37c670e2a174fe88837016d1b19f75cf29e1588428204c7706199e3c5963820d"
+}

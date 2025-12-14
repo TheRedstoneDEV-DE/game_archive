@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link href="style.css" rel="stylesheet">
+    <script src="lib.js"></script>
+    <script>
+      let id = 0;
+      let compat_name;
+      let compat_exe;
+      let compat_env;
+
+      const safeNumber = (n) => Number.isNaN(n) ? 0 : n;
+
+      async function onload() {
+        compat_name = document.getElementsByName("compat_name")[0];
+        compat_exe = document.getElementsByName("compat_exe")[0];
+        compat_env = document.getElementsByName("compat_env")[0];
+
+        id = safeNumber(parseIdFromUrl());
+        if (id > 0) {
+          var data = await getJSONAsync(`/api/compat_tools?id=${id}`);
+          compat_name.value = data.name;
+          compat_exe.value = data.executable;
+          compat_env.value = Object.entries(data.environment).map(([k, v]) => `${k},${v}`).join(";");
+        }
+        load_transition();
+      }
+      async function submit() {
+        let compat_tool_json = JSON.stringify({
+          id: id,
+          name: compat_name.value,
+          executable: compat_exe.value,
+          environment: toHashMap(compat_env.value)
+        });
+        console.log(compat_tool_json);
+        await postJSON("/api/compat_tools", compat_tool_json);
+      }
+    </script>
+  </head>
+  <body onload="onload()";>
+    <div id="fade-overlay"></div> 
+      <div class="blur_layer">
+        <div class="flex_center">
+          <div class = "center_popup">
+            <h2 style="margin-bottom: 2rem;">Add/Edit Compatibility Tool:</h2>
+            <span>Compatibility Tool Name:</span>
+            <input type="text" name="compat_name" id="compat_name" placeholder="My Custom Proton">
+            <span>Executable:</span>
+            <input type="text" name="compat_exe" placeholder="/path/to/my/proton">
+            <span>Environment:</span>
+            <input type="text" name="compat_env" placeholder="PROTON_USE_NTSYNC,1;PROTON_USE_WAYLAND,1">
+            <div class="button green" style="margin-top: 0.5em" onclick="submit()">
+              Finish
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

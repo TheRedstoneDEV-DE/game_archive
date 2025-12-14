@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT \n                date(timestamp_start, 'unixepoch') AS timestamp,\n                game,\n                SUM(timestamp_end - timestamp_start) AS total_playtime\n            FROM history\n            WHERE timestamp_start >= strftime('%s', ?1, '-7 days')\n            AND timestamp_start <= strftime('%s', ?1, '+1 days')\n            GROUP BY timestamp, game\n            ORDER BY timestamp DESC;",
+  "describe": {
+    "columns": [
+      {
+        "name": "timestamp",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "game",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "total_playtime",
+        "ordinal": 2,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "d31d7a26f6d451c68e1920cd8c6d86eb993b60207b062020911bf6f66d33e38d"
+}

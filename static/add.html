@@ -6,21 +6,19 @@
   <script src="lib.js"></script>
   <script>
     let id = 0;
-    let selection;
-    function populate(state, data) {
-      for (compat_tool of data) {
-         const option = document.createElement('option');
-         option.value = compat_tool.id;
-         option.textContent = compat_tool.name;
-         selection.appendChild(option)
+    let selection; 
+
+    async function populate_compat() {
+      for (selection of document.getElementsByName("compat_tool")) {
+        let tools = await getJSONAsync("/api/compat_tools")
+        for (tool of tools) {
+          const option = document.createElement('option');
+          option.value = tool.id;
+          option.textContent = tool.name;
+          selection.appendChild(option);
+        }
       }
       load_transition();
-    }
-
-    function populate_compat() {
-      selection = document.getElementsByName("compat_tool")[0];
-      getJSON("http://127.0.0.1:8000/api/compat_tools", populate)
-
     }
 
     function add_subgame() {
@@ -37,17 +35,50 @@
     function remove_subgame(button) {
       button.parentElement.remove()
     }
+    
+    async function submit() {
+      let game_json = JSON.stringify({
+        id: 0,
+        name: document.getElementById('game_name').value
+      });
+      console.log(game_json);
+      let parent_obj = await postJSON("/api/games", game_json);
+      for (subgame_el of [... document.getElementsByClassName("subgame")].slice(1)) {
+        var subgame_playtime = subgame_el.querySelector("[name='subgame_playtime']").valueAsNumber; 
+        var subgame_json = JSON.stringify({
+          id: 0,
+          name: subgame_el.querySelector("[name='subgame_name']").value,
+          playtime: subgame_playtime === 0 ? null : subgame_playtime,
+          last_launch: null,
+          is_archived: false,
+          parent: parent_obj.id
+        });
+        console.log(subgame_json);
+        let created_obj = await postJSON("/api/subgame", subgame_json);
+        
+        var gameconfig_json = JSON.stringify({
+          arguments: subgame_el.querySelector("[name='launch_args']").value.split(" "),
+          working_directory: subgame_el.querySelector("[name='workdir']").value,
+          game_prefix: subgame_el.querySelector("[name='winprefix']").value,
+          executable: subgame_el.querySelector("[name='gamex']").value,
+          environment: toHashMap(subgame_el.querySelector("[name='env']").value),
+          archive_file: ""
+        });
+        console.log(gameconfig_json);
+        await postJSON(`/api/launch_config?id=${created_obj.id}`, gameconfig_json);
+        var cover = subgame_el.querySelector("[name='sgcard']").files[0];
+        await postImage(`/api/subgame_cover?id=${created_obj.id}`,cover);
+        var compat_tool = subgame_el.querySelector("[name='compat_tool']").value;
+        if (compat_tool != ""){
+          await fetch(`/api/compat_assign?tool=${compat_tool}&game=${created_obj.id}`, {method: "GET"});
+        }  
+      }
+      var card = document.getElementsByName("gamecard")[0].files[0];
+      var background = document.getElementsByName("background")[0].files[0];
+      await postImage(`/api/media?game=${parent_obj.id}&location=card`,card);
+      await postImage(`/api/media?game=${parent_obj.id}&location=background`,background);
 
-    function synthesize_json() {
-      // first create game (name, subgames) 
-      // put subgames into list (name, playtime, last_launch)
-      // call back to /api/games?add
-      
-      // put down launch config (arguments[], working_directory, game_prefix, executable, environment, archive_file) /api/game_conf?id=
-      // assign compat_tool /api/assign_compat?tool=&game=
-
-      // upload images /api/media?game=&location=
-    }
+      }
 
     function onload() {
       id = parseIdFromUrl();
@@ -66,20 +97,20 @@
           <h2 style="margin-bottom: 2rem;">Add Game:</h2>
           <span>Game Name:</span>
           <input type="text" name="name" id="game_name" placeholder="Some Game">
-          <span>Game Card (600x900) (2.5 MB max):</span>
+          <span>Game Card (600x900) (5 MB max):</span>
           <input type="file" name="gamecard" value="">
-          <span>Game Background (2.5 MB max):</span>
+          <span>Game Background (5 MB max):</span>
           <input type="file" name="background" value="" style="margin-bottom: 3em">
           <span>Sub-Games:</span>
           <div class="subgames scrollable" id="subgames" style="text-align:left; padding: 1%">
             <div id="subgame_dummy" class="subgame" name="subgame_meta" style="display:none">
               <span><b>Sub-Game 0</b></span><br><br>
               <span>Sub-Game Name:</span>
-              <input type="text" name="subname0_name" id="subgame0_name" placeholder="[leave empty for same]">
-              <span>Sub-Game Card (leave empty to use same):</span>
+              <input type="text" name="subgame_name" id="subgame0_name" placeholder="[leave empty for same]">
+              <span>Sub-Game Card:</span>
               <input type="file" name="sgcard" value="">
               <span>Sub-Game Playtime (hours):</span>
-              <input type="number" name="subgame0_playtime" id="subgame0_playtime" value=0.0 step=0.1>
+              <input type="number" name="subgame_playtime" id="subgame0_playtime" value=0.0 step=0.1>
               <span>Compatability Tool:</span>
               <select name="compat_tool"></select>
               <span>Working Directory:</span>
@@ -99,11 +130,11 @@
             <div name="subgame_meta" class="subgame">
               <span><b>Sub-Game 0</b></span><br><br>
               <span>Sub-Game Name:</span>
-              <input type="text" name="subname0_name" id="subgame0_name" placeholder="[leave empty for same]">
-              <span>Sub-Game Card (leave empty to use same):</span>
+              <input type="text" name="subgame_name" id="subgame0_name" placeholder="[leave empty for same]">
+              <span>Sub-Game Card:</span>
               <input type="file" name="sgcard" value="">
               <span>Sub-Game Playtime (hours):</span>
-              <input type="number" name="subgame0_playtime" id="subgame0_playtime" value=0.0 step=0.1>
+              <input type="number" name="subgame_playtime" id="subgame0_playtime" value=0.0 step=0.1>
               <span>Compatability Tool:</span>
               <select name="compat_tool"></select>
               <span>Working Directory:</span>
@@ -121,7 +152,7 @@
           <div class="button" onclick="add_subgame()">
           + Add Sub-Game
           </div>
-          <div class="button green">
+          <div class="button green" onclick="submit()">
             Finish
           </div>
         </div>

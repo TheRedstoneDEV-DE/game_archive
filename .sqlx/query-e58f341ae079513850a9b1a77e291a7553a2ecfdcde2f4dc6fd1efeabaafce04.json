@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM compat_tools WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "e58f341ae079513850a9b1a77e291a7553a2ecfdcde2f4dc6fd1efeabaafce04"
+}
