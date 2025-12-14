@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO history (id, game, timestamp_start, timestamp_end)\n        VALUES (\n            (\n                SELECT id\n                FROM history\n                WHERE game = ?3\n                  AND (?2 - timestamp_end) <= 600\n                ORDER BY timestamp_end DESC\n                LIMIT 1\n            ),?3,?2,?1\n        )\n        \n        ON CONFLICT(id) DO UPDATE SET\n            timestamp_end = excluded.timestamp_end;\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5e57a4ce0329b1cfcea45640f37c3ead0ff6828f1eebd12cf01e9fba7809b460"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO games (name) VALUES (?); SELECT last_insert_rowid() AS id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a873236817d083bb573d1d9a0f2e6d8e226e9e22e1cd6ca57dbead9de321decd"
+}

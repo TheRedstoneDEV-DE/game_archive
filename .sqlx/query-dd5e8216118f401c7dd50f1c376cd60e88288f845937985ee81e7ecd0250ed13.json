@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT image, mime_type FROM subgame_covers WHERE subgame = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "image",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "mime_type",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "dd5e8216118f401c7dd50f1c376cd60e88288f845937985ee81e7ecd0250ed13"
+}

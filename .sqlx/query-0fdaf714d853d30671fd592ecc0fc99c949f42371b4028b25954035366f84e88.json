@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT g.id AS id,\n                  g.name AS name, \n                  SUM(s.playtime) AS playtime, \n                  MAX(s.last_launch) AS last_launch, \n                  MIN(s.is_archived) AS is_archived \n            FROM games g \n            JOIN subgames s ON g.id = s.parent \n            WHERE g.id = ?",
+  "query": "SELECT g.id AS id,\n                  g.name AS name, \n                  SUM(s.playtime) AS playtime, \n                  MAX(s.last_launch) AS last_launch,\n                  COALESCE(MIN(s.is_archived), 0) AS is_archived\n            FROM games g \n            LEFT JOIN subgames s ON g.id = s.parent\n            GROUP BY g.id, g.name\n        ",
   "describe": {
     "columns": [
       {
@@ -26,19 +26,19 @@
       {
         "name": "is_archived",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Int"
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 0
     },
     "nullable": [
       true,
       true,
       true,
       true,
-      true
+      false
     ]
   },
-  "hash": "d43b3f0e2f1d1f68f167e0692eea14a9bc4b2f639ba4614ccdbc03a87b16864c"
+  "hash": "0fdaf714d853d30671fd592ecc0fc99c949f42371b4028b25954035366f84e88"
 }

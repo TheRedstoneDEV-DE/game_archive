@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT ct.id, ct.name, ct.executable, ct.environment\n        FROM subgames g\n        JOIN compat_tools ct ON g.compat_tool = ct.id\n        WHERE g.id = ?;",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "executable",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "environment",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "13eeaaed212146b83215a19dc03429b34b6e9031020e877627e56f994640f086"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO artworks (mime_type, blob, type, game) VALUES (?,?,?,?) \n            ON CONFLICT (game, type) DO UPDATE SET \n            blob = excluded.blob,\n            mime_type = excluded.mime_type",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "3396217360b87a7c2e11ce9466b982f292d0f807c52dfb5be3d3a6fd9d0dcffe"
+}

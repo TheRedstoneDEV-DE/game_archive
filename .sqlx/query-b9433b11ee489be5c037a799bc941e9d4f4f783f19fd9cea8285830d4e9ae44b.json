@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO subgame_covers (mime_type, image, subgame) VALUES (?,?,?) \n            ON CONFLICT (subgame) DO UPDATE SET \n            image = excluded.image,\n            mime_type = excluded.mime_type",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "b9433b11ee489be5c037a799bc941e9d4f4f783f19fd9cea8285830d4e9ae44b"
+}

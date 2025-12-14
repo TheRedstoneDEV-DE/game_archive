@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO subgames (name,playtime,last_launch,is_archived,parent) VALUES (?,?,?,?,?); SELECT last_insert_rowid() AS id;",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4e546c6fd4b561878217a1da3a01ceabf3ffe631b8159e198daae504e9c9af5b"
+}
