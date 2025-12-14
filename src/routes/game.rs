@@ -6,20 +6,27 @@ use rocket_db_pools::Connection;
 use crate::structures::{Db, MetaGame, SubGame, Game};
 
 #[post("/subgame", format = "json", data = "<data>")]
-async fn post_subgame(mut db: Connection<Db>, data: json::Json<SubGame>) -> Option<Status> {
+async fn post_subgame(mut db: Connection<Db>, data: json::Json<SubGame>) -> Option<json::Json<SubGame>> {
     if data.id == 0 {
-        sqlx::query!(
-            "INSERT INTO subgames (name,playtime,last_launch,is_archived,parent) VALUES (?,?,?,?,?)",
+        let row = sqlx::query!(
+            "INSERT INTO subgames (name,playtime,last_launch,is_archived,parent) VALUES (?,?,?,?,?); SELECT last_insert_rowid() AS id;",
             data.name,
             data.playtime,
             data.last_launch,
             data.is_archived,
             data.parent
-        ).execute(&mut **db)
+        ).fetch_optional(&mut **db)
         .await
-        .ok()?;
+        .ok()??;
 
-        return Some(Status::Ok)
+        return Some(json::Json(SubGame{
+            id: row.id as i64,
+            name: data.name.clone(),
+            playtime: data.playtime,
+            last_launch: data.last_launch,
+            is_archived: data.is_archived,
+            parent: data.parent
+        }));
     }
     sqlx::query!(
         "UPDATE subgames SET name = ?, playtime = ?, last_launch = ?, is_archived = ?, parent = ? WHERE id = ?",
@@ -33,7 +40,7 @@ async fn post_subgame(mut db: Connection<Db>, data: json::Json<SubGame>) -> Opti
     .await
     .ok()?;
 
-    Some(Status::Ok)
+    Some(data)
 }
 
 #[get("/subgame?<id>")]
@@ -59,7 +66,7 @@ async fn get_gamemeta(id: i64, mut db: Connection<Db>) -> Option<json::Json<Meta
                   MAX(s.last_launch) AS last_launch, 
                   MIN(s.is_archived) AS is_archived 
             FROM games g 
-            JOIN subgames s ON g.id = s.parent 
+            LEFT JOIN subgames s ON g.id = s.parent 
             WHERE g.id = ?"#,
         id
     ).fetch_optional(&mut **db)
@@ -76,9 +83,9 @@ async fn get_games(mut db: Connection<Db>) -> Option<json::Json<Vec<MetaGame>>> 
                   g.name AS name, 
                   SUM(s.playtime) AS playtime, 
                   MAX(s.last_launch) AS last_launch,
-                  MIN(s.is_archived) AS is_archived
+                  COALESCE(MIN(s.is_archived), 0) AS is_archived
             FROM games g 
-            JOIN subgames s ON g.id = s.parent
+            LEFT JOIN subgames s ON g.id = s.parent
             GROUP BY g.id, g.name
         "#
     ).fetch_all(&mut **db)
@@ -100,16 +107,22 @@ async fn get_games(mut db: Connection<Db>) -> Option<json::Json<Vec<MetaGame>>> 
 }
 
 #[post("/games", format="json", data="<data>")]
-async fn post_games(mut db: Connection<Db>, data: json::Json<Game>) -> Option<Status> {
+async fn post_games(mut db: Connection<Db>, data: json::Json<Game>) -> Option<json::Json<Game>> {
     if data.id == 0 {
-        sqlx::query!(
-            "INSERT INTO games (name) VALUES (?)",
+        let row = sqlx::query!(
+            "INSERT INTO games (name) VALUES (?); SELECT last_insert_rowid() AS id",
             data.name
-        ).execute(&mut **db)
+        ).fetch_optional(&mut **db)
         .await
-        .ok()?;
+        .ok()??;
 
-        return Some(Status::Ok)
+        return Some(json::Json(Game{
+            id: row.id as i64,
+            name: data.name.clone(),
+            subgames: vec![].into()
+        }))
+    } else {
+
     }
     sqlx::query!(
         "UPDATE games SET name = ? WHERE id = ?",
@@ -119,7 +132,7 @@ async fn post_games(mut db: Connection<Db>, data: json::Json<Game>) -> Option<St
     .await
     .ok()?;
 
-    Some(Status::Ok)
+    Some(data)
 }
 
 

@@ -93,7 +93,7 @@
       libpulseaudio
       libselinux
       libsndfile
-      libsoup_2_4
+      libsoup_3
       libtheora
       libtiff
       libunwind

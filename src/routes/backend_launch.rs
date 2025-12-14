@@ -34,7 +34,10 @@ pub async fn get_game_conf(db: &mut Connection<Db>, id: i64) -> Option<GameConfi
 pub async fn get_compat_tool(db: &mut Connection<Db>, id: i64) -> Option<CompatTool> {
     let conn = db.acquire().await.ok()?;
     let rows = sqlx::query!(
-        "SELECT id, name, executable, environment FROM compat_tools WHERE id = ?",
+        "SELECT ct.id, ct.name, ct.executable, ct.environment
+        FROM subgames g
+        JOIN compat_tools ct ON g.compat_tool = ct.id
+        WHERE g.id = ?;",
         id
     ).fetch_optional(conn)
     .await
@@ -179,8 +182,10 @@ async fn get_history( mut db: Connection<Db>, scope: &str, date: Option<String>)
 
 #[get("/launch?<id>")]
 async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Connection<Db>) -> String {
+    println!("Starting Game!");
     let game_runtime: Arc<GameRuntime> = game_runtime.inner().clone();
     if !game_runtime.game_running.swap(true, Ordering::SeqCst) {
+        println!("Validated that no other game is running!");
             if let Some(compat_tool) = get_compat_tool(&mut db, id).await && let Some(game_config) = get_game_conf(&mut db, id).await {
                 let arguments: Vec<String> = vec![game_config.executable].iter().chain(game_config.arguments.iter()).cloned().collect();
                 let environment = compat_tool.environment.into_iter().chain(game_config.environment);
@@ -192,6 +197,9 @@ async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Co
                 if game_config.archive_file != "".to_string() {
                     //TODO: [IMPL ARCHIVE SYSTEM] mount game's Squashfs
                 }
+                println!("Starting Process: {} run {:?}", compat_tool.executable, arguments);
+                println!("In working_directory: {}", game_config.working_directory);
+                println!("With Environment: {:?}", environment);
                 let child = Command::new(compat_tool.executable)
                     .current_dir(game_config.working_directory)
                     .arg("run")

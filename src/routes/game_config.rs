@@ -31,7 +31,7 @@ async fn get_game_config(id: i64, mut db:  Connection<Db>) -> Option<String>{
 async fn post_game_config(mut db: Connection<Db>, data: json::Json<GameConfig>, id: i64) -> Option<json::Json<GameConfig>>{
     let stringified_json = json::serde_json::to_string_pretty(&data.clone().into_inner()).ok()?;
     sqlx::query!(
-        "UPDATE subgames SET launch_config = ?1 WHERE id = ?",
+        "UPDATE subgames SET launch_config = ? WHERE id = ?",
         stringified_json,
         id
     ).execute(&mut **db)
@@ -85,7 +85,7 @@ async fn get_compat_tools(mut db: Connection<Db>) -> Option<json::Json<Vec<MetaC
 }
 
 #[post("/compat_tools", format="json", data="<data>")]
-async fn post_compat_tools(mut db: Connection<Db>, data: json::Json<CompatTool>) -> Option<Status> {
+async fn post_compat_tools(mut db: Connection<Db>, data: json::Json<CompatTool>) -> Option<json::Json<CompatTool>> {
     let env_data = json::serde_json::to_string_pretty(&data.environment).ok()?;
     if data.id != 0 {
         sqlx::query!(
@@ -97,17 +97,25 @@ async fn post_compat_tools(mut db: Connection<Db>, data: json::Json<CompatTool>)
         ).execute(&mut **db)
         .await
         .ok()?;
-        return Some(Status::Ok)
+
+        return Some(data)
     }
-    sqlx::query!(
-        "INSERT INTO compat_tools (name,executable,environment) VALUES (?,?,?)",
+    let row = sqlx::query!(
+        "INSERT INTO compat_tools (name,executable,environment) VALUES (?,?,?); SELECT last_insert_rowid() AS id;",
         data.name,
         data.executable,
         env_data,
-    ).execute(&mut **db)
+    ).fetch_optional(&mut **db)
     .await
-    .ok()?;
-    return Some(Status::Ok)
+    .ok()??;
+
+    return Some(json::Json(CompatTool { 
+            id: row.id as i64,
+            name: data.name.clone(),
+            executable: data.executable.clone(),
+            environment: data.environment.clone() 
+    }));
+
 }
 
 #[delete("/compat_tools?<id>")]

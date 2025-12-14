@@ -33,7 +33,8 @@ async fn run_migrations(pool: &sqlx::SqlitePool) {
             FOREIGN KEY('subgame')
                 REFERENCES 'subgames'('id')
                 ON UPDATE CASCADE
-                ON DELETE CASCADE
+                ON DELETE CASCADE,
+            UNIQUE (subgame)
         );
         CREATE TABLE IF NOT EXISTS games (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
