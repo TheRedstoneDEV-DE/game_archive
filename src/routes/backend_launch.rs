@@ -221,7 +221,7 @@ async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Co
                     game_runtime.game_running.store(false, Ordering::SeqCst);
                     let playtime = ((Utc::now() - game_start).num_minutes() as f32) / 60.0;
                     let row = sqlx::query!(
-                        "UPDATE subgames SET playtime = playtime + ?, last_launch = ? WHERE id = ?",
+                        "UPDATE subgames SET playtime = COALESCE(playtime, 0) + ?, last_launch = ? WHERE id = ?",
                         playtime, 
                         game_start_unix, 
                         id

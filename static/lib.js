@@ -49,6 +49,65 @@ async function postJSON(url, json) {
   return await response.json();
 } 
 
+async function populate_compat() {
+  var elements = document.getElementsByName("compat_tool"); 
+  var template = document.getElementsByTagName("template")[0];            //
+  if (template != undefined) {                                            // In case there is a template element
+    elements = [template.content.querySelector("[name='compat_tool']")];  // -> TODO: migrate add.html  to template elements
+  }                                                                       //    
+  for (selection of elements) {
+    let tools = await getJSONAsync("/api/compat_tools")
+    for (tool of tools) {
+      const option = document.createElement('option');
+      option.value = tool.id;
+      option.textContent = tool.name;
+      selection.appendChild(option);
+    }
+  }
+}
+
+function parseSubgame(subgame_el, gameID, last_launch, is_archived){
+  var subgame_playtime = subgame_el.querySelector("[name='subgame_playtime']").valueAsNumber; 
+  return {
+    id: parseInt(subgame_el.querySelector("[name='subid']").content),
+    name: subgame_el.querySelector("[name='subgame_name']").value,
+    playtime: subgame_playtime === 0 ? null : subgame_playtime,
+    last_launch: last_launch,
+    is_archived: is_archived,
+    parent: gameID
+  };
+}
+
+function parseGameConf(subgame_el, archive_file) {
+  return {
+    arguments: subgame_el.querySelector("[name='subgame_args']").value.split(" "),
+    working_directory: subgame_el.querySelector("[name='subgame_workdir']").value,
+    game_prefix: subgame_el.querySelector("[name='subgame_winprefix']").value,
+    executable: subgame_el.querySelector("[name='subgame_executable']").value,
+    environment: toHashMap(subgame_el.querySelector("[name='subgame_env']").value),
+    archive_file: archive_file
+  }
+}
+
+function splitArguments(args) {
+  outString = "";
+  for (arg of args) {
+    outString += arg + " ";
+  }
+  return outString;
+}
+
+function hashToString(hashMap) {
+  outString = "";
+  Object.entries(hashMap).forEach(([key, value]) => {
+    if (outString != "") {
+      outString+= ";";
+    }
+    outString += `${key},${value}`;
+  });
+  return outString;
+}
+
 function toHashMap(input) {
   const pairs = input.split(';');
 

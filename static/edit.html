@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link href="style.css" rel="stylesheet">
+    <script src="lib.js"></script>
+    <script>
+      let gameID;
+      let gameInfo;
+      let launchConfig;
+      let removed_subgames = [];
+
+      function remove_subgame(button) {
+        var id = button.parentElement.querySelector("[name='subid']").content; 
+        if (id != "0") {
+          removed_subgames.push(id);
+        }
+        button.parentElement.remove()
+      }
+
+      function add_subgame() {
+        let subgame_template = document.getElementsByTagName("template")[0].content.cloneNode(true);
+        document.getElementById("subgames").appendChild(subgame_template);
+      }
+
+      async function submit() {
+        // -- Update MetaGame (Name) --
+        const original_gname = document.getElementById("gname").dataset.user;
+        const new_gname      = document.getElementById("gname").value;
+        if (original_gname != new_gname) {
+          await postJSON("/api/games", {id: gameID, name: new_gname});
+        }
+        
+        // -- Update MetaGame Images --
+        const card = document.getElementsByName("gamecard")[0].files[0];
+        const background = document.getElementsByName("background")[0].files[0];
+        if (card !== undefined) {
+          await postImage(`/api/media?game=${gameID}&location=card`, card);
+        }
+        if (background !== undefined) {
+          await postImage(`/api/media?game=${gameID}&location=background`, background);
+        }
+
+        for (subgame_el of document.getElementsByName("subgame_meta")) {
+          const original_state = subgame_el.querySelector("[name='original_state_meta']").content;
+          const original_config = subgame_el.querySelector("[name='original_config']").content;
+
+          var subid = subgame_el.querySelector("[name='subid']").content;
+          var subgame_data = {last_launch: null, is_archived: false};
+          if (subid != "0") {
+            subgame_data = gameInfo.subgames.find(obj => obj.id === parseInt(subid));
+          }
+          
+          // -- Update Subgame --
+          var subgame_json = JSON.stringify(parseSubgame(subgame_el, gameID, subgame_data.last_launch, subgame_data.is_archived));
+          var updated_object;
+          if (subgame_json != original_state){
+            console.log("Sending Subgame:")
+            console.log(subgame_json);
+            updated_object = await postJSON("/api/subgame", subgame_json);
+          } else {
+            console.log("Subgame is unchanged, not sending...")
+          } 
+
+          if (subid == "0") {
+            subid = updated_object.id;
+          }
+          await fetch(`/api/compat_assign?tool=${subgame_el.querySelector("[name='compat_tool']").value}&game=${subid}`, {method: "GET"});
+          
+          // -- Update Launch Config --
+          var subgame_config = JSON.stringify(parseGameConf(subgame_el, ""));
+          if (subgame_config != original_config) {
+            console.log("Sending Subgame Launch Config:");
+            console.log(subgame_config);
+            await postJSON("/api/launch_config?id="+subid, subgame_config);
+          } else {
+            console.log("Subgame Launch Config is unchanged, not sending...")
+          }
+
+          // -- Update Subgame Images --
+          const subcard = subgame_el.querySelector("[name='subgame_card']").files[0];
+          if (subcard !== undefined) {
+            await postImage(`/api/subgame_cover?id=${subid}`, subcard);
+          }
+        }
+        
+        // -- Delete removed Subgames -- 
+        for (game of removed_subgames) {
+            await fetch("/api/subgames?id="+game, {method: "DELETE"});
+        }
+      }
+
+      async function prefill() {
+        document.getElementById("gname").value = gameInfo.name;
+        document.getElementById("gname").dataset.user = gameInfo.name;
+        
+        for (subgame of gameInfo.subgames) {
+          let subgame_template = document.getElementsByTagName("template")[0].content.cloneNode(true);
+          subgame_template.querySelector("[name='subgame_name']").value = subgame.name;
+          subgame_template.querySelector("[name='subgame_playtime']").value = subgame.playtime;
+          subgame_template.querySelector("[name='subid']").content = subgame.id;
+                    
+          // get launch config:
+          launchConfig = await getJSONAsync("/api/launch_config?id="+subgame.id);
+          subgame_template.querySelector("[name='subgame_workdir']").value = launchConfig.working_directory;
+          subgame_template.querySelector("[name='subgame_winprefix']").value = launchConfig.game_prefix;
+          subgame_template.querySelector("[name='subgame_executable']").value = launchConfig.executable;
+          subgame_template.querySelector("[name='subgame_args']").value = splitArguments(launchConfig.arguments);
+          subgame_template.querySelector("[name='subgame_env']").value = hashToString(launchConfig.environment);
+
+          subgame_template.querySelector("[name='original_state_meta']").content = JSON.stringify(parseSubgame(subgame_template, gameID, subgame.last_launch, subgame.is_archived))
+          subgame_template.querySelector("[name='original_config']").content = JSON.stringify(parseGameConf(subgame_template, ""));
+
+          document.getElementById("subgames").appendChild(subgame_template);
+        }
+      }
+
+      async function onload() {
+        gameID = parseIdFromUrl();
+        gameInfo = await getJSONAsync("/api/games?id="+gameID);
+        document.body.style.backgroundImage="url(/api/media?game="+gameID+"&location=background)";
+        document.getElementById("headline").innerText = `Edit "${gameInfo.name}" (ID:${gameID})`;
+
+        // populate compat_tool dropdown
+        await populate_compat();
+
+        // prefill form
+        await prefill();
+     
+        load_transition();
+      }
+    </script>
+  </head>
+  <body onload="onload()">
+    <div id="fade-overlay"></div> 
+    <div class="blur_layer">
+      <div class="flex_center">
+        <div class = "center_popup">
+          <h2 id="headline" style="margin-bottom: 2rem;"></h2>
+          <span>Game Name:</span>
+          <input type="text" id="gname" value="" >
+          <span>Game Card (600x900) (5 MB max):</span>
+          <input type="file" name="gamecard" value="">
+          <span>Game Background (5 MB max):</span>
+          <input type="file" name="background" value="" style="margin-bottom: 3em">
+          <span>Sub-Games:</span>
+          <div class="subgames scrollable" id="subgames" style="text-align:left; padding: 1%">
+            <template>
+              <div class="subgame" name="subgame_meta">
+                <meta name="subid" content="0">
+                <meta name="original_state_meta" content="">
+                <meta name="original_config" content="">
+                <span><b>Sub-Game 0</b></span><br><br>
+                <span>Sub-Game Name:</span>
+                <input type="text" name="subgame_name">
+                <span>Sub-Game Card:</span>
+                <input type="file" name="subgame_card" value="">
+                <span>Sub-Game Playtime (hours):</span>
+                <input type="number" name="subgame_playtime" value=0.0 step=0.1>
+                <span>Compatability Tool:</span>
+                <select name="compat_tool"></select>
+                <span>Working Directory:</span>
+                <input type="text" name="subgame_workdir" value="">
+                <span>Wine Prefix:</span>
+                <input type="text" name="subgame_winprefix" value="">
+                <span>Game Executeable:</span>
+                <input type="text" name="subgame_executable" value="">
+                <span>Launch Arguments:</span>
+                <input type="text" name="subgame_args" value="">
+                <span>Environment:</span><br>
+                <input type="text" name="subgame_env" value="" placeholder="SOME_VARIABLE,some value;SOME_OTHER_VAR,some value">
+                <div class="button red" onclick="remove_subgame(this)">
+                  - Remove
+                </div>
+              </div>
+            </template>
+          </div>
+          <div class="button" onclick="add_subgame()">
+          + Add Sub-Game
+          </div>
+          <div class="button green" onclick="submit()">
+            Finish
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
