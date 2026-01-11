@@ -8,7 +8,7 @@ in
   pkgs.mkShell rec {
     buildInputs = with pkgs; [
       rustup
-      pkg-config
+      #pkg-config
       openssl
       glib
     ];
