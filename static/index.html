@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="/static/style.css"/>
-    <script src="/static/gameClass.js"></script>
-    <script src="/static/lib.js"></script>
+    <link rel="stylesheet" href="style.css"/>
+    <script src="gameClass.js"></script>
+    <script src="lib.js"></script>
     <script>
       let currentIndex = 0;
       let currentContainer = "last_played"; // default row
@@ -142,12 +142,12 @@
           
           current_tab = id;
           if (current_tab == 0) {
-            window.location = "/static/index.html";
+            window.location = "index.html";
           } else if (current_tab == 1 && !archived_view) {
-            window.location = "/static/index.html#archived";
+            window.location = "index.html#archived";
             window.location.reload();
           } else if (current_tab == 2) {
-            window.location = "/static/add.html";
+            window.location = "add.html";
           }
         }
       }

@@ -1,5 +1,7 @@
 use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Arc, atomic::AtomicU32};
 use std::process::Command;
+use std::path::Path;
+
 use rocket::fs::FileServer;
 use rocket::fairing::AdHoc;
 use rocket_db_pools::Database;
@@ -103,7 +105,7 @@ fn rocket() -> _ {
     let url = format!("http://{}:{}/static/index.html", config.address, config.port);
     //open_url(&url);
 
-    rocket::build()
+    let mut rocket = rocket::build()
         .attach(Db::init())
         .attach(AdHoc::on_ignite("Run Migrations", |rocket| async {
             let db_pool = Db::fetch(&rocket).unwrap();
@@ -114,6 +116,13 @@ fn rocket() -> _ {
         .mount("/api", routes::game::routes())
         .mount("/api", routes::media::routes())
         .mount("/api", routes::backend_launch::routes())
-        .mount("/api", routes::game_config::routes())
-        .mount("/static", FileServer::from("static"))
+        .mount("/api", routes::game_config::routes());
+       
+        if Path::new("static").exists() {
+            rocket = rocket.mount("/", FileServer::from("static").rank(1));
+        }
+        rocket = rocket.mount("/", routes::embedded_files::routes());
+
+
+        rocket
 }
