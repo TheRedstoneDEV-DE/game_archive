@@ -99,7 +99,7 @@
           }
           else if (e.key === "Escape") {
             e.preventDefault();
-            window.location = "/static/index.html";
+            window.location = "index.html";
           }
           else if (e.key === "S") {
             e.preventDefault();
@@ -133,7 +133,7 @@
         ), 500); 
       }
       function settings(id){
-
+        window.location = "edit.html#id="+game.id;
       }
     </script>
   </head>

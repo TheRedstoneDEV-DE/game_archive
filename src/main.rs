@@ -119,7 +119,7 @@ fn rocket() -> _ {
         .mount("/api", routes::game_config::routes());
        
         if Path::new("static").exists() {
-            rocket = rocket.mount("/", FileServer::from("static").rank(1));
+            rocket = rocket.mount("/", FileServer::from("static").rank(10));
         }
         rocket = rocket.mount("/", routes::embedded_files::routes());
 

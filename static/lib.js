@@ -164,3 +164,12 @@ function load_transition() {
     body.classList.add("hidden");
   }, 10); // 10ms is enough
 }
+
+function preloadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(url);
+    img.onerror = reject;
+    img.src = url;
+  });
+}

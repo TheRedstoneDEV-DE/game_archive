@@ -16,7 +16,7 @@
       var last_selected_el = null;
       var archived_view = false;
 
-      function onload(){
+      async function onload(){
        getJSON('/api/games',
          function(err, data) {
            if (err !== null) {
@@ -27,8 +27,7 @@
              if (archived_view) {
                changeToTab(1);
              }
-             init();
-             load_transition();
+             init(); 
            }
          }
        );
@@ -80,7 +79,7 @@
         }
       }
 
-      function init(){
+      async function init(){
         // create MetaGames, so games with subgames are handled correctly
        // for (i in games) {
        //   meta_games = meta_games.concat(new MetaGame(games[i]))
@@ -102,6 +101,8 @@
         }
 
         for (game in meta_games){
+          await preloadImage("/api/media/?game="+sort_name[game].id+"&location=card");
+          await preloadImage("/api/media/?game="+sort_name[game].id+"&location=background");
           document.getElementById("all_games").innerHTML+="<img src=\"/api/media?game="+sort_name[game].id+"&location=card\" class=\"game_card gc_name\" onclick=\"select("+sort_name[game].id+", this)\" data-id="+sort_name[game].id+"></img>"
           document.getElementById("most_played").innerHTML+="<img src=\"/api/media?game="+sort_playtime[game].id+"&location=card\" class=\"game_card gc_most_played\" onclick=\"select("+sort_playtime[game].id+", this)\" data-id="+sort_playtime[game].id+"></img>"
           document.getElementById("last_played").innerHTML+="<img src=\"/api/media?game="+sort_lastplayed[game].id+"&location=card\" class=\"game_card gc_last_played\" onclick=\"select("+sort_lastplayed[game].id+", this)\" id=\"sort_lastplayed"+game+"\" data-id="+sort_lastplayed[game].id+"></img>"
@@ -110,6 +111,7 @@
         if (meta_games.length > 0) {
           select(sort_lastplayed[0].id,document.getElementById("sort_lastplayed0"));
         }
+        load_transition();
       }
 
       function select(id, el){

@@ -11,7 +11,7 @@ use std::ffi::OsStr;
 #[folder = "static/"]
 struct Assets;
 
-#[get("/<path..>", rank = 3)]
+#[get("/<path..>", rank = 12)]
 fn static_files(path: std::path::PathBuf) -> Option<(ContentType, Cow<'static, [u8]>)> {
     let filename = path.display().to_string();
     let asset = Assets::get(&filename)?;
@@ -24,7 +24,7 @@ fn static_files(path: std::path::PathBuf) -> Option<(ContentType, Cow<'static, [
     Some((content_type, asset.data))
 }
 
-#[get("/", rank = 2)]
+#[get("/", rank = 11)]
 fn index() -> Option<RawHtml<Cow<'static, [u8]>>> {
     let asset = Assets::get("index.html")?;
     Some(RawHtml(asset.data))
