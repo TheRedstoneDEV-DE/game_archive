@@ -1,6 +1,11 @@
+use std::io::Write;
 use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Arc, atomic::AtomicU32};
 use std::process::Command;
 use std::path::Path;
+use std::{env, fs};
+use std::fs::File;
+
+use dirs::home_dir;
 
 use rocket::fs::FileServer;
 use rocket::fairing::AdHoc;
@@ -10,8 +15,11 @@ use rocket::launch;
 mod routes;
 mod structures;
 //mod database_helper;
+mod mount_helper;
 
 use structures::*;
+
+use crate::mount_helper::mount_overlayfs;
 
 async fn run_migrations(pool: &sqlx::SqlitePool) {
     sqlx::query(
@@ -93,6 +101,15 @@ fn open_url(url: &str) {
     }
 }
 
+fn write_defconfig(path: &Path) -> std::io::Result<()> {
+    let mut f = File::create_new(path.join("Rocket.toml"))?;
+    f.write_all(format!(r#"
+        [default.databases.sqlite_db]
+        url = "sqlite://{}/games.sqlite"
+    "#, path.to_str().unwrap()).as_bytes())?;
+    Ok(())
+}
+
 #[launch]
 fn rocket() -> _ {
     let runtime = Arc::new(GameRuntime{
@@ -101,11 +118,32 @@ fn rocket() -> _ {
         running_since: AtomicIsize::new(0),
         pid: AtomicU32::new(0),
     });
-    let config = rocket::config::Config::default();
-    let url = format!("http://{}:{}/static/index.html", config.address, config.port);
-    //open_url(&url);
+   
+    // Why no "proper" error handling?
+    // -> It will fail anyways if nothing up here works!
+    let config_dir = home_dir().expect("Unable to find home location!").join(".config/game_archive");
+    let config_path = config_dir.join("Rocket.toml");
 
-    let mut rocket = rocket::build()
+    if !config_dir.exists() {
+        fs::create_dir_all(&config_dir.join("mount").join("read-only")).expect("Error creating config path!");
+        fs::create_dir(&config_dir.join("mount").join("overlay")).expect("Error creating overlay directory!");        
+        fs::create_dir(&config_dir.join("web-mixin")).expect("Error creating web-mixin directory!");
+        write_defconfig(config_dir.as_path()).expect("Error creating default config!");
+    }
+
+    if env::var("ROCKET_CONFIG").is_err() {
+        unsafe {
+            env::set_var("ROCKET_CONFIG", config_path.to_str().unwrap());
+        }
+    }
+
+    let config = rocket::config::Config::default();
+    let url = format!("http://{}:{}/index.html", config.address, config.port); // open GUI
+    open_url(&url);
+    
+    // mount_overlayfs(); -- Just testing, I'll remove it!
+
+    rocket::build()
         .attach(Db::init())
         .attach(AdHoc::on_ignite("Run Migrations", |rocket| async {
             let db_pool = Db::fetch(&rocket).unwrap();
@@ -116,13 +154,7 @@ fn rocket() -> _ {
         .mount("/api", routes::game::routes())
         .mount("/api", routes::media::routes())
         .mount("/api", routes::backend_launch::routes())
-        .mount("/api", routes::game_config::routes());
-       
-        if Path::new("static").exists() {
-            rocket = rocket.mount("/", FileServer::from("static").rank(10));
-        }
-        rocket = rocket.mount("/", routes::embedded_files::routes());
-
-
-        rocket
+        .mount("/api", routes::game_config::routes())
+        .mount("/", FileServer::from(config_dir.join("web-mixin")).rank(10))
+        .mount("/", routes::embedded_files::routes())
 }
