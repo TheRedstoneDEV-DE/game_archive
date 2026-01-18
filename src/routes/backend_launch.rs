@@ -1,16 +1,17 @@
+use dirs::config_dir;
 use rocket::{get, routes, State};
 use rocket::serde::json;
 use chrono::Utc;
-use uuid::timestamp;
-use std::thread;
 use std::collections::HashMap;
 use std::sync::{atomic::Ordering, Arc};
+use std::path::Path;
 use tokio::process::Command;
 use nix::unistd::Pid;
 use nix::sys::{signal, signal::Signal};
 use rocket_db_pools::{Connection, sqlx};
 use rocket_db_pools::sqlx::Acquire;
 
+use crate::mount_helper;
 use crate::structures::{Db, GameConfig, CompatTool, GameRuntime, GameHistory, HistoryType, HistoryGame};
 
 struct IntermediateTimestamp {
@@ -191,17 +192,33 @@ async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Co
                 let environment = compat_tool.environment.into_iter().chain(game_config.environment);
                 let game_start = Utc::now();
                 let game_start_unix = Utc::now().timestamp();
+                let mut working_directory = game_config.working_directory.clone();
                 game_runtime.running_since.store(game_start_unix as isize, Ordering::Relaxed);
                 game_runtime.current_game.store(id as isize, Ordering::Relaxed);
 
+                let mut _ovfs_mount_handle = None;
+                let mut _sqfs_mount_handle = None;
+
                 if game_config.archive_file != "".to_string() {
-                    //TODO: [IMPL ARCHIVE SYSTEM] mount game's Squashfs
+                    println!("Mounting archive file: {}", game_config.archive_file);
+                    _sqfs_mount_handle = Some(mount_helper::mount_squashfs(Path::new(&game_config.archive_file)).await);
+                    _ovfs_mount_handle = Some(mount_helper::mount_overlayfs());
+
+                    working_directory = config_dir().expect("Unable to locate config dir! ")
+                        .join("game_archive/mount/overlay")
+                        .to_str().expect("Unable to convert Path to String!")
+                        .to_string();
+
+                    if game_config.working_directory != "" {
+                        working_directory += &game_config.working_directory;
+                    }
                 }
+
                 println!("Starting Process: {} run {:?}", compat_tool.executable, arguments);
-                println!("In working_directory: {}", game_config.working_directory);
+                println!("In working_directory: {}", working_directory);
                 println!("With Environment: {:?}", environment);
                 let child = Command::new(compat_tool.executable)
-                    .current_dir(game_config.working_directory)
+                    .current_dir(working_directory)
                     .arg("run")
                     .args(arguments)
                     .env("STEAM_COMPAT_DATA_PATH", game_config.game_prefix.clone())

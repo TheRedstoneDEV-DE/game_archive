@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {} }:
 
-(pkgs.buildFHSEnv {
+pkgs.buildFHSEnv {
   name = "simple-x11-env";
   targetPkgs =
     pkgs:
@@ -21,6 +21,8 @@
       which
       xorg.xrandr
       zstd
+      fuse-overlayfs
+      fuse3
     ]);
     multiPkgs =
     let
@@ -128,5 +130,9 @@
     ]
     ++ xorgDeps pkgs
     ++ gstreamerDeps pkgs;
-  runScript = "bash";
-}).env
+  runScript = pkgs.writeScript "fhs-wrapper" ''
+    #!/bin/bash
+    exec "$@"
+  '';
+  
+}

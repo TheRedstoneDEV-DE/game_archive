@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, Mutex, atomic::AtomicU32};
+use std::sync::{atomic::AtomicBool, atomic::AtomicIsize, atomic::AtomicU32};
 use std::collections::HashMap;
 use rocket::serde::{Deserialize, Serialize};
 use rocket_db_pools::{sqlx, Database};

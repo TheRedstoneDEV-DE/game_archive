@@ -46,6 +46,7 @@
         for (subgame_el of document.getElementsByName("subgame_meta")) {
           const original_state = subgame_el.querySelector("[name='original_state_meta']").content;
           const original_config = subgame_el.querySelector("[name='original_config']").content;
+          const archive_file = subgame_el.querySelector("[name='archivefile']").value;
 
           var subid = subgame_el.querySelector("[name='subid']").content;
           var subgame_data = {last_launch: null, is_archived: false};
@@ -54,7 +55,7 @@
           }
           
           // -- Update Subgame --
-          var subgame_json = JSON.stringify(parseSubgame(subgame_el, gameID, subgame_data.last_launch, subgame_data.is_archived));
+          var subgame_json = JSON.stringify(parseSubgame(subgame_el, gameID, subgame_data.last_launch, archive_file != ""));
           var updated_object;
           if (subgame_json != original_state){
             console.log("Sending Subgame:")
@@ -70,7 +71,7 @@
           await fetch(`/api/compat_assign?tool=${subgame_el.querySelector("[name='compat_tool']").value}&game=${subid}`, {method: "GET"});
           
           // -- Update Launch Config --
-          var subgame_config = JSON.stringify(parseGameConf(subgame_el, ""));
+          var subgame_config = JSON.stringify(parseGameConf(subgame_el, archive_file));
           if (subgame_config != original_config) {
             console.log("Sending Subgame Launch Config:");
             console.log(subgame_config);
@@ -109,9 +110,10 @@
           subgame_template.querySelector("[name='subgame_executable']").value = launchConfig.executable;
           subgame_template.querySelector("[name='subgame_args']").value = splitArguments(launchConfig.arguments);
           subgame_template.querySelector("[name='subgame_env']").value = hashToString(launchConfig.environment);
+          subgame_template.querySelector("[name='archivefile']").value = launchConfig.archive_file;
 
           subgame_template.querySelector("[name='original_state_meta']").content = JSON.stringify(parseSubgame(subgame_template, gameID, subgame.last_launch, subgame.is_archived))
-          subgame_template.querySelector("[name='original_config']").content = JSON.stringify(parseGameConf(subgame_template, ""));
+          subgame_template.querySelector("[name='original_config']").content = JSON.stringify(parseGameConf(subgame_template, launchConfig.archive_file));
 
           document.getElementById("subgames").appendChild(subgame_template);
         }
@@ -161,6 +163,8 @@
                 <input type="number" name="subgame_playtime" value=0.0 step=0.1>
                 <span>Compatability Tool:</span>
                 <select name="compat_tool"></select>
+                <span>Archive File [optional]:</span>
+                <input type="text" name="archivefile" value="">
                 <span>Working Directory:</span>
                 <input type="text" name="subgame_workdir" value="">
                 <span>Wine Prefix:</span>

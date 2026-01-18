@@ -19,8 +19,6 @@ mod mount_helper;
 
 use structures::*;
 
-use crate::mount_helper::mount_overlayfs;
-
 async fn run_migrations(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"CREATE TABLE IF NOT EXISTS artworks (
@@ -139,9 +137,8 @@ fn rocket() -> _ {
 
     let config = rocket::config::Config::default();
     let url = format!("http://{}:{}/index.html", config.address, config.port); // open GUI
-    open_url(&url);
+    //open_url(&url);
     
-    // mount_overlayfs(); -- Just testing, I'll remove it!
 
     rocket::build()
         .attach(Db::init())
