@@ -55,21 +55,14 @@
       window.location = "index.html";
     }
 
-    async function onload() {
-    
-      document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            window.location = "index.html";
-        }
-      })
-
+    async function onload() { 
       id = parseIdFromUrl();
       if (id){
         document.body.style.backgroundImage="url(/api/media?game="+id+"&location=background)";
       }
       
       await populate_compat();
+      registerBackButton("index.html");
       load_transition();
     }
   </script>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game Archive - Configuration Wizard</title>
+    <link href="style.css" rel="stylesheet">
+    <script src="lib.js"></script>
+    <script>
+      async function onload() {
+        const compat_tools = await getJSONAsync("/api/compat_tools");
+        if (compat_tools.length > 0) {
+          const add_game = document.getElementById("add_game");
+          const edit_compat = document.getElementById("edit_compat");
+          add_game.href="/add_game.html";
+          add_game.classList.remove("disabled");
+          edit_compat.href="/edit_compat.html";
+          edit_compat.classList.remove("disabled");
+        }
+        registerBackButton("index.html");
+        load_transition();
+      }
+    </script>
+  </head>
+  <body onload="onload()">
+  <div id="fade-overlay"></div> 
+  <div class="header_bar">
+   <a href="index.html" class="header_button header_button_active">
+     <!-- Left Arrow for back button --> 
+    <svg width="auto" height="100%" viewBox="-19.04 0 75.803 75.803" xmlns="http://www.w3.org/2000/svg">
+      <g id="Group_64" data-name="Group 64" transform="translate(-624.082 -383.588)">
+        <path id="Path_56" data-name="Path 56" d="M660.313,383.588a1.5,1.5,0,0,1,1.06,2.561l-33.556,33.56a2.528,2.528,0,0,0,0,3.564l33.556,33.558a1.5,1.5,0,0,1-2.121,2.121L625.7,425.394a5.527,5.527,0,0,1,0-7.807l33.556-33.559A1.5,1.5,0,0,1,660.313,383.588Z" fill="#000000"/>
+       </g>
+     </svg>
+    </a> 
+    <a class="large_spacer"></a>
+    <a class="large_spacer"></a>
+    <a class="large_spacer"></a>
+  </div>
+  <div class="flex_center">
+    <div class="center_popup">
+      <h2>What to add?</h2>
+      <span>Compatability Tool:</span>
+      <div class="multibutton">
+        <a class="button inline-btn green" id="add_compat" href="/add_compat.html"> + Add </a>
+        <a class="button inline-btn blue disabled" id="edit_compat" href="javascript:alert('Add a compatability tool first!')"> Edit </a>
+      </div>
+      <div class="vspacer"></div>
+      <span>Game:</span><br>
+      <div class="multibutton">
+       <a class="button green inline-btn disabled" id="add_game" href="javascript:alert('Add a compatability tool first!')"> + Add </a>
+      </div>
+    </div>  
+  </div>
+  </body>
+</html>

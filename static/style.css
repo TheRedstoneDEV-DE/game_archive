@@ -40,21 +40,34 @@ body {
   background-color: rgba(255,255,255,0.05);
   backdrop-filter: blur(20px);
   border: 1px solid #8f8f8f;
+  text-decoration: none;
 }
-
 .button:hover {
   transition: 0.2s linear;
   background-color: rgba(255,255,255,0.2);
 }
 
+.inline-btn {
+  flex-grow: 1;
+  font-size: 1.5em;
+}
+
+.multibutton {
+  display: flex;
+  flex-direction: row;
+}
+
+/* -- button colors -- */
+
+/* GREEN button */
 .green {
   background-color: rgba(0, 250, 150, 0.6);  
 }
-
 .green:hover {
   background-color: rgba(0, 250, 150, 0.8); 
 }
 
+/* RED button */
 .red {
   background-color: #df0f0faf;
 }
@@ -62,7 +75,25 @@ body {
   background-color: #df0f0fff;
 }
 
+/* BLUE button */
+.blue {
+  background-color: rgba(0, 180, 250, 0.6);
+}
+.blue:hover {
+  background-color: rgba(0, 180, 250, 0.8);
+}
 
+.disabled {
+  background-color: #2f2f2f;
+  color: #afafaf;
+}
+.disabled:hover {
+  background-color: #2f2f2f;
+}
+
+.vspacer {
+  margin-top: 1em;
+}
 
 /* -- Scrollable -- */
 .scrollable {
@@ -149,10 +180,14 @@ body {
 
 .center_popup {
   width: 25%;
+  min-width: 375px;
   background-color: rgba(255,255,255,0.1); 
   backdrop-filter: blur(10px); 
   border-radius: 5px;
   text-align: center;
+  padding: 0.5%;
+  max-height: calc(100vh-25px);
+  overflow-y: auto;
 }
 
 input, select {
