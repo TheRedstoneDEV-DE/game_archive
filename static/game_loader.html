@@ -8,12 +8,26 @@
       var id = 0;
 
       function onload() {
-         id = parseIdFromUrl();
+        id = parseGameIdFromUrl();
         init();
-         load_transition();
-         getStatus();
-         setInterval(getStatus, 30000);
-         setInterval(displayElapsed, 500);
+        load_transition();
+        getJSON('/api/launch?id='+parseIdFromUrl(),
+          function(err, data) {
+            if (err !== null) {
+              alert('Something went wrong: ' + err);
+            } else {
+              if (data.status != "successful"){
+                alert("Error: "+data.status)
+              }
+              window.location = "index.html"
+            }
+          }
+        );
+        
+        setTimeout(() => {
+          getStatus();
+          setInterval(displayElapsed, 1000);
+        }, 1000);
        }
       function getStatus() {
         getJSON('/api/status',
@@ -23,8 +37,6 @@
              } else {
                if (data.game_running) {
                  running_since = data.running_since;
-               }else {
-                 window.location = "index.html"
                }
              }
            }

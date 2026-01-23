@@ -17,6 +17,10 @@ function parseIdFromUrl() {
   return parseInt(window.location.hash.replace("#id=", ""));
 }
 
+function parseGameIdFromUrl() {
+  return parseInt(window.location.hash.replace("#id=","").split(",")[1]);
+}
+
 async function getJSONAsync(url) {
   var resp = await fetch(url,{method: "GET"});
   return await resp.json();

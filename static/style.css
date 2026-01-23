@@ -285,6 +285,8 @@ input, select {
   border-bottom-left-radius: 10px;
   background-color: rgba(0, 250, 150, 0.6);
   max-width: 400px;
+  color: white;
+  text-decoration: none;
 }
 
 .sb_play:hover {
@@ -295,6 +297,8 @@ input, select {
 .sb_play_active {
   transition: 0.25s;
   background-color: rgba(0, 180, 200, 0.4);
+  color: white;
+  text-decoration: none;
 }
 
 .sb_settings {
