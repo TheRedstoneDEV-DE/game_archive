@@ -30,7 +30,7 @@
         const original_gname = document.getElementById("gname").dataset.user;
         const new_gname      = document.getElementById("gname").value;
         if (original_gname != new_gname) {
-          await postJSON("/api/games", {id: gameID, name: new_gname});
+          await postJSON("/api/games", JSON.stringify({id: gameID, name: new_gname}));
         }
         
         // -- Update MetaGame Images --
