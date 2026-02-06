@@ -77,7 +77,7 @@ async fn run_migrations(pool: &sqlx::SqlitePool) {
             timestamp_end INT NOT NULL,
             game INT NOT NULL,
             FOREIGN KEY('game') 
-                REFERENCES 'games'('id')
+                REFERENCES 'subgames'('id')
                 ON UPDATE CASCADE
                 ON DELETE CASCADE
         );"#

@@ -5,7 +5,7 @@
 
 async function getDatasets(gameIds, data) {
   const datasets = await Promise.all(gameIds.map(async (id, idx) => {
-    const response = await fetch(`http://localhost:8000/api/games?id=${id}`);
+    const response = await fetch(`http://localhost:8000/api/subgame?id=${id}`);
     const name_data = await response.json();
     const name = name_data.name;
 
