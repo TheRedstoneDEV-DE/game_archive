@@ -1,12 +1,12 @@
 # The Game Archive
-is an application that archives games into squashfs archives and launch them by mounting the archives (without needing to fully unpack them) on Linux.
-It is meant for use with Windows games via Proton, but it can also be used for native Linux titles. 
-You can also launch non-archived games with this tool by using it as a normal game launcher. 
-In terms of UI it is mostly built inspired by the Steam Bigpicture mode, meant to also be usable for livingroom PCs, but not yet implemented for Gamepad controls.
+is an application that archives games into squashfs archives and launches them by mounting the archives (without needing to fully unpack them) in Linux.
+It is meant for use with Windows games via Proton, but can also be used for native Linux titles. 
+You can also launch non-archived games with it by using it as a normal game launcher. 
+In terms of UI it is mostly built inspired by the Steam Bigpicture mode, meant to be usable on livingroom PCs (Gamepad controls are not implemented yet).
 
 ## Disclaimer
 All games launched with this tool should be DRM-FREE (like for example games from GOG.com). 
-I do not condone game piracy of any type and this project is not meant to be used with illegaly obtained games.
+I do not condone game piracy of any type and this project is not meant to be used with illegally obtained games.
 This tool does not contain any sofware for removing DRM or other piracy related actions.
 
 ## How to use?
