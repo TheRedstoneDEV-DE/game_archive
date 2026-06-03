@@ -20,7 +20,7 @@ async fn post_subgame(mut db: Connection<Db>, data: json::Json<SubGame>) -> Opti
         .ok()??;
 
         return Some(json::Json(SubGame{
-            id: row.id as i64,
+            id: row.id.into(),
             name: data.name.clone(),
             playtime: data.playtime,
             last_launch: data.last_launch,
@@ -121,9 +121,8 @@ async fn post_games(mut db: Connection<Db>, data: json::Json<Game>) -> Option<js
             name: data.name.clone(),
             subgames: vec![].into()
         }))
-    } else {
-
     }
+
     sqlx::query!(
         "UPDATE games SET name = ? WHERE id = ?",
         data.name,

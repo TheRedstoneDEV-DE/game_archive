@@ -25,3 +25,6 @@ damascus = "0.0.11"
 squashfs-async = { version = "0.1.2", features = [ "asyncfs" ] }
 fuser-async = "0.1.1"
 fuser = { version = "0.11.1" }
+image = "0.25.10"
+png = "0.18.1"
+base64 = "0.22.1"

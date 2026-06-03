@@ -78,3 +78,26 @@ pub struct GameRuntime {
     pub pid: AtomicU32, 
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct MediaObj {
+    pub base64: String,
+    pub format: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct GameExport {
+    pub name: String,
+    pub playtime: Option<f64>,
+    pub last_launch: Option<i64>,
+    pub is_archived: bool,
+    pub config: GameConfig,
+    pub game_card: Option<MediaObj>
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct DataExport {
+    pub game_name: String,
+    pub subgames: Vec<GameExport>,
+    pub game_card: Option<MediaObj>,   
+    pub game_background: Option<MediaObj>,
+}

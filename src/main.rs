@@ -152,6 +152,7 @@ fn rocket() -> _ {
         .mount("/api", routes::media::routes())
         .mount("/api", routes::backend_launch::routes())
         .mount("/api", routes::game_config::routes())
+        .mount("/api", routes::xport::routes())
         .mount("/", FileServer::from(config_dir.join("web-mixin")).rank(10))
         .mount("/", routes::embedded_files::routes())
 }
