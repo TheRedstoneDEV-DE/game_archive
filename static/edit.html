@@ -25,6 +25,23 @@
         document.getElementById("subgames").appendChild(subgame_template);
       }
 
+      async function delete_game() {
+        if (window.confirm("Are you sure to delete "+ gameInfo.name +"?")) {
+          await fetch("/api/games?id="+gameID, {method: "DELETE"});
+          window.location="/"
+        } else {
+          window.location="/";
+        }
+      }
+
+      async function export_game() {
+        const a = document.createElement("a");
+        a.href = "/api/xport?id="+gameID;
+        a.download = gameInfo.name+".png"
+        a.click();
+        a.remove();
+      }
+
       async function submit() {
         // -- Update MetaGame (Name) --
         const original_gname = document.getElementById("gname").dataset.user;
@@ -137,7 +154,7 @@
   </head>
   <body onload="onload()">
     <div id="fade-overlay"></div>
-    <div class="header_bar">
+    <div class="header_bar" style="position: absolute;">
       <a href="index.html" class="header_button header_button_active">
         <!-- Left Arrow for back button --> 
        <svg width="auto" height="100%" viewBox="-19.04 0 75.803 75.803" xmlns="http://www.w3.org/2000/svg">
@@ -199,6 +216,12 @@
           </div>
           <div class="button green" onclick="submit()">
             Finish
+          </div>
+          <div class="button red" style="width: 49%; display: inline-block;" onclick="delete_game()">
+            - DELETE
+          </div>
+          <div class="button" style="width: 49%; display: inline-block;" onclick="export_game()">
+            Export
           </div>
         </div>
       </div>
