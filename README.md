@@ -34,7 +34,7 @@ nix-shell
 ```
 2. Build / Run
 ```
-cargo run -r
+DATABASE_URL=sqlite:game_archive_BUILD.sqlite cargo run -r
 ```
 
 ## Configuring
@@ -60,10 +60,12 @@ For other config options look up the Rocket.rs Rocket.toml documentation.
 - - [x] Ability to play archived games (mount, etc.)
 - - [x] Track playtime of games (local DB)
 - - [x] Track play sessions of games (local DB)
+- - [x] Game configuration Import/Export (via PNG)
 - [ ] Frontend
 - - [x] Display games sorted by playtime, last-launch and alphabetically
 - - [x] Launch games
 - - [x] Add games + compatibility tools
 - - [x] Configure games + compatibility tools
+- - [x] Deleting games
 - - [ ] Visualize game sessions (with their playtime) [Mocked up]
 - - [ ] Ability to remove compatibility tools
