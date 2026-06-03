@@ -1,11 +1,11 @@
 { pkgs ? import <nixpkgs> {} }:
   let
-    overrides = (builtins.fromTOML (builtins.readFile ./rust-toolchain.toml));
+    overrides = (fromTOML (builtins.readFile ./rust-toolchain.toml));
     libPath = with pkgs; lib.makeLibraryPath [
       # load external libraries that you need in your rust project here
     ];
 in
-  pkgs.mkShell rec {
+  pkgs.mkShell {
     buildInputs = with pkgs; [
       rustup
       fuse3
@@ -21,14 +21,14 @@ in
       export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
       '';
     # Add precompiled library to rustc search path
-    RUSTFLAGS = (builtins.map (a: ''-L ${a}/lib'') [
+    RUSTFLAGS = (map (a: ''-L ${a}/lib'') [
       # add libraries here (e.g. pkgs.libvmi)
     ]);
     LD_LIBRARY_PATH = libPath;
     # Add glibc, clang, glib, and other headers to bindgen search path
     BINDGEN_EXTRA_CLANG_ARGS =
     # Includes normal include path
-    (builtins.map (a: ''-I"${a}/include"'') [
+    (map (a: ''-I"${a}/include"'') [
       # add dev libraries here (e.g. pkgs.libvmi.dev)
       pkgs.glibc.dev
     ])

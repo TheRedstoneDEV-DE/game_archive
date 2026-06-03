@@ -19,7 +19,7 @@ pkgs.buildFHSEnv {
       python3
       unzip
       which
-      xorg.xrandr
+      xrandr
       zstd
       fuse-overlayfs
       fuse3
@@ -27,7 +27,7 @@ pkgs.buildFHSEnv {
     multiPkgs =
     let
       xorgDeps =
-        pkgs: with pkgs.xorg; [
+        pkgs: with pkgs; [
           libICE
           libpthreadstubs
           libSM
@@ -122,11 +122,15 @@ pkgs.buildFHSEnv {
       speex
       sqlite
       udev
-      unixODBC
+      unixodbc
       util-linux
       vulkan-loader
       wayland
       zlib
+      bzip2
+      libgbm
+      bubblewrap
+      vulkan-tools
     ]
     ++ xorgDeps pkgs
     ++ gstreamerDeps pkgs;
