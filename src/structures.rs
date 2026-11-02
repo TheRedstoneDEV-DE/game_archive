@@ -68,7 +68,7 @@ pub struct GameConfig {
     pub game_prefix: String,
     pub executable: String,
     pub environment: HashMap<String,String>,
-    pub archive_file: String,
+    pub archive_file: Vec<String>,
 }
 
 pub struct GameRuntime {

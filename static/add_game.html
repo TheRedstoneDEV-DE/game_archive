@@ -32,8 +32,8 @@
       let parent_obj = await postJSON("/api/games", game_json);
       for (subgame_el of [... document.getElementsByClassName("subgame")].slice(1)) {
         var subgame_playtime = subgame_el.querySelector("[name='subgame_playtime']").valueAsNumber; 
-        var subgame_archivef = subgame_el.querySelector("[name='archivefile']").value;
-        var subgame_json = JSON.stringify(parseSubgame(subgame_el, parent_obj.id, null, subgame_archivef != ""));
+        var subgame_archivef = subgame_el.querySelector("[name='archivefile']").value.split(";");
+        var subgame_json = JSON.stringify(parseSubgame(subgame_el, parent_obj.id, null, subgame_archivef.length > 0));
         console.log(subgame_json);
         let created_obj = await postJSON("/api/subgame", subgame_json);
         

@@ -197,13 +197,15 @@ async fn launch_game(id: i64, game_runtime: &State<Arc<GameRuntime>>, mut db: Co
                 game_runtime.current_game.store(id as isize, Ordering::Relaxed);
 
                 let mut _ovfs_mount_handle = None;
-                let mut _sqfs_mount_handle = None;
+                let mut _sqfs_mount_handles = vec![];
 
-                if game_config.archive_file != "".to_string() {
-                    println!("Mounting archive file: {}", game_config.archive_file);
-                    _sqfs_mount_handle = Some(mount_helper::mount_squashfs(Path::new(&game_config.archive_file)).await);
-                    _ovfs_mount_handle = Some(mount_helper::mount_overlayfs());
-
+                if game_config.archive_file.len() > 0 {
+                    for archive_index in 0..game_config.archive_file.len() {
+                        println!("Mounting archive file: {}", game_config.archive_file[archive_index]);
+                        _sqfs_mount_handles.push(Some(mount_helper::mount_squashfs(Path::new(&game_config.archive_file[archive_index]), archive_index).await)); 
+                    }
+                    _ovfs_mount_handle = Some(mount_helper::mount_overlayfs(game_config.archive_file.len()));
+                    
                     working_directory = config_dir().expect("Unable to locate config dir! ")
                         .join("game_archive/mount/overlay")
                         .to_str().expect("Unable to convert Path to String!")

@@ -56,6 +56,7 @@
         if (card !== undefined) {
           await postImage(`/api/media?game=${gameID}&location=card`, card);
         }
+
         if (background !== undefined) {
           await postImage(`/api/media?game=${gameID}&location=background`, background);
         }
@@ -63,7 +64,7 @@
         for (subgame_el of document.getElementsByName("subgame_meta")) {
           const original_state = subgame_el.querySelector("[name='original_state_meta']").content;
           const original_config = subgame_el.querySelector("[name='original_config']").content;
-          const archive_file = subgame_el.querySelector("[name='archivefile']").value;
+          const archive_file = subgame_el.querySelector("[name='archivefile']").value.split(";");
 
           var subid = subgame_el.querySelector("[name='subid']").content;
           var subgame_data = {last_launch: null, is_archived: false};
@@ -72,7 +73,7 @@
           }
           
           // -- Update Subgame --
-          var subgame_json = JSON.stringify(parseSubgame(subgame_el, gameID, subgame_data.last_launch, archive_file != ""));
+          var subgame_json = JSON.stringify(parseSubgame(subgame_el, gameID, subgame_data.last_launch, archive_file.length > 0));
           var updated_object;
           if (subgame_json != original_state){
             console.log("Sending Subgame:")
@@ -127,7 +128,7 @@
           subgame_template.querySelector("[name='subgame_executable']").value = launchConfig.executable;
           subgame_template.querySelector("[name='subgame_args']").value = splitArguments(launchConfig.arguments);
           subgame_template.querySelector("[name='subgame_env']").value = hashToString(launchConfig.environment);
-          subgame_template.querySelector("[name='archivefile']").value = launchConfig.archive_file;
+          subgame_template.querySelector("[name='archivefile']").value = launchConfig.archive_file.join(";");
 
           subgame_template.querySelector("[name='original_state_meta']").content = JSON.stringify(parseSubgame(subgame_template, gameID, subgame.last_launch, subgame.is_archived))
           subgame_template.querySelector("[name='original_config']").content = JSON.stringify(parseGameConf(subgame_template, launchConfig.archive_file));
