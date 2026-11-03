@@ -17,7 +17,7 @@ tokio = { version = "1.47.1", features = [ "process" ] }
 rust-embed = { version = "8.10.0", features = [ "rocket" ] }
 dirs = "6.0.0"
 damascus = "0.0.11"
-squashfs-async = { version = "0.1.2", features = [ "asyncfs" ] }
+squashfs-async = { path="./squashfs-async", features = [ "asyncfs" ] }
 fuser-async = "0.1.1"
 fuser = { version = "0.11.1" }
 image = { version = "0.25.10", default-features = false, features = [ "jpeg", "png", "webp" ]}

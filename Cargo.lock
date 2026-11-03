@@ -2961,8 +2961,6 @@ dependencies = [
 [[package]]
 name = "squashfs-async"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cb65c8debbc8cae1e81d1607d851a3ea500639c0272ddecd2e131ce19903156"
 dependencies = [
  "anyhow",
  "async-compression",
